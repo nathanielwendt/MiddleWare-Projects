@@ -1,4 +1,4 @@
-package masterbroker;
+package brokers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,19 +8,15 @@ import java.net.Socket;
 import java.util.concurrent.*;
 
 import setup.Init;
-import entities.BrokerDistributor;
-import entities.BrokerManager;
 import includes.LinkName;
 import entities.Message;
 
 public class BrokerLinkThreadChild extends BrokerLinkThread {
 	private LinkName linkName;
-	private int nextBrokerPort;
 	
 	public BrokerLinkThreadChild(BrokerManager brokerManager, int nextBrokerPort, LinkName linkName){
 		this.linkName = linkName;
 	    this.brokerManager = brokerManager;
-	    this.nextBrokerPort = nextBrokerPort;
         try {
             this.socket = new Socket(Init.NETWORKNAME, nextBrokerPort);
         } catch (IOException e) {

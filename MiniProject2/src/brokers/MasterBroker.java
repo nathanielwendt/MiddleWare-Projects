@@ -1,4 +1,4 @@
-package masterbroker;
+package brokers;
 
 import java.net.*;
 import java.io.*;

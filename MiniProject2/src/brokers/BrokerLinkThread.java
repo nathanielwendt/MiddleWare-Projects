@@ -1,12 +1,9 @@
-package masterbroker;
+package brokers;
 
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import entities.BrokerDistributor;
-import entities.BrokerManager;
-import entities.Event;
 import entities.Message;
 import includes.LinkName;
 
@@ -114,8 +111,11 @@ public class BrokerLinkThread extends Thread {
         				if(bq != brokerManager.parent)
         					brokerManager.parent.add(msg);
     				}
-    				//Message tester = new Message("try this out");
-    				//this.brokerManager.pos1.add(tester);
+    				try{
+    					Thread.sleep(3000); //pace the thread so CPU resources can be shared
+    				} catch (InterruptedException e){
+    					e.printStackTrace();
+    				}
     			}
 	
     			//check for new events or subscription that should be made known to the entity

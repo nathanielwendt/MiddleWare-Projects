@@ -1,5 +1,7 @@
-package entities;
+package brokers;
 import java.util.concurrent.*;
+
+import entities.Message;
 import includes.LinkName;
 
 public class BrokerManager {

@@ -1,4 +1,4 @@
-package entities;
+package brokers;
 import setup.Init;
 
 public class BrokerDistributor {
