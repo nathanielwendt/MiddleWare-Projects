@@ -72,7 +72,13 @@ public class BuyerIOThread extends Thread {
 	        		break;
 
 	        	//listen for messages on incoming
-	        	
+    			Message nextMsg = (Message) outgoing.poll();
+				if(nextMsg != null){
+					//inform the socket connection of the message
+					
+					//demo code, in the future this should be a serialized object
+					outstream.println(nextMsg.debugString);		
+				}
 	        	
 	        	//To-Do remove since this is for testing only
 	        	if(this.stdIn.ready()){

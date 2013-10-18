@@ -12,6 +12,7 @@ public class Buyer {
  
     	Buyer buyer = new Buyer();
     	new BuyerIOThread(buyer.incoming, buyer.outgoing).start();
+		buyer.SendNotice();
         while(true){
 			try{
 				Thread.sleep(3000);
@@ -29,6 +30,11 @@ public class Buyer {
 			System.out.println(nextMsg.debugString);		
 		}
     	
+    }
+    
+    public void SendNotice(){
+    	Message nextMsg = new Message("hey I'm a buyer wanting to tell the brokers something");
+    	this.outgoing.add(nextMsg);
     }
 
 }
