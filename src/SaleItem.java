@@ -18,20 +18,20 @@ public class SaleItem {
 	private final long timeStamp;
 	private final double costLowerBound;
 	private final double costUpperBound;
+	private final String uuid;
 	
 	public static void main(String[] args){
-		ItemDatabase data = ItemDatabase.getInstance();
+		SubscriptionsDatabase data = SubscriptionsDatabase.getInstance();
 		Calendar c = Calendar.getInstance();
-		SaleItem s1 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),1000,5000);
-		SaleItem s2 = new SaleItem("Car","lamborghini",c.getTimeInMillis(),1000,3000);
-		c.set(Calendar.YEAR, 2012);
-		SaleItem s3 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),30000,50000);
-		SaleItem s4 = new SaleItem("Car","lamborghini",c.getTimeInMillis(),12000,20000);
-		SaleItem s5 = new SaleItem("Animal","Cat",c.getTimeInMillis(),1000,3000);
-		c.set(Calendar.YEAR, 2013);
-		SaleItem s6 = new SaleItem("Animal","Cat",c.getTimeInMillis(),12000,80000);
-		SaleItem s7 = new SaleItem("Animal","Platypus",c.getTimeInMillis(),1000,3500);
-		SaleItem s8 = new SaleItem("Object","pen",c.getTimeInMillis(),1.5,22.3);
+		SaleItem s1 = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000);
+		SaleItem s2 = new SaleItem("Car","lamborghini",SaleItem.TIME_STAMP_IGNORE,1000,3000);
+		SaleItem s3 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,50000);
+		SaleItem s4 = new SaleItem("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,500,20000);
+		SaleItem s5 = new SaleItem("Animal","Cat",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,3000);
+		SaleItem s6 = new SaleItem("Animal","Cat",c.getTimeInMillis(),12000,SaleItem.COST_UPPER_BOUND_IGNORE);
+		SaleItem s7 = new SaleItem("Animal","Platypus",c.getTimeInMillis(),1000,SaleItem.COST_UPPER_BOUND_IGNORE);
+		SaleItem s8 = new SaleItem("Object","pen",c.getTimeInMillis(),1.5,SaleItem.COST_UPPER_BOUND_IGNORE);
+		SaleItem s9 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,50000);
 		
 		data.addItemToDataBase(s1);
 		data.addItemToDataBase(s2);
@@ -41,9 +41,12 @@ public class SaleItem {
 		data.addItemToDataBase(s6);
 		data.addItemToDataBase(s7);
 		data.addItemToDataBase(s8);
+		data.addItemToDataBase(s9);
 		
-		System.out.println(data.getSearchResult(new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,
-				SaleItem.COST_LOWER_BOUND_IGNORE,SaleItem.COST_UPPER_BOUND_IGNORE)));
+		SaleItem sTest = new SaleItem("Car","Mercedes",c.getTimeInMillis(),1000,10000);
+		
+		System.out.println(data.getSearchResult(new SaleItem("Car","Mercedes",c.getTimeInMillis(),1000,10000)));
+		
 		
 	}
 	
@@ -53,6 +56,7 @@ public class SaleItem {
 		this.timeStamp = timeStamp;
 		this.costLowerBound = costLowerBound;
 		this.costUpperBound = costUpperBound;
+		this.uuid = UUIDGenerator.getNextUUID();
 	}
 	
 	public String getBaseString() {
@@ -101,6 +105,7 @@ public class SaleItem {
 		if (!(obj instanceof SaleItem))
 			return false;
 		SaleItem other = (SaleItem) obj;
+		if(!uuid.equals(other.uuid)) return false;
 		if (baseString == null) {
 			if (other.baseString != null)
 				return false;
@@ -135,24 +140,26 @@ public class SaleItem {
 		
 		if (modifierString == null) {
 			if (other.getModifierString() != null) return false;
-		} else if (!modifierString.equals(other.getModifierString().toLowerCase()) && !other.getModifierString().equals(MODIFIER_STRING_IGNORE)){
+		} else if (!modifierString.equals(other.getModifierString().toLowerCase()) && !other.getModifierString().equals(MODIFIER_STRING_IGNORE)
+				&& !modifierString.equals(MODIFIER_STRING_IGNORE)){
 			return false;
 		}
-		
 		// segregated only by year!
 		Calendar myDate = Calendar.getInstance();
 		myDate.setTimeInMillis(timeStamp);
 		Calendar otherDate = Calendar.getInstance();
 		otherDate.setTimeInMillis(other.getTimeStamp());
-		if (myDate.get(Calendar.YEAR) != otherDate.get(Calendar.YEAR) && other.getTimeStamp() != SaleItem.TIME_STAMP_IGNORE) return false;
-		
+		if (myDate.get(Calendar.YEAR) != otherDate.get(Calendar.YEAR) && other.getTimeStamp() != SaleItem.TIME_STAMP_IGNORE
+				&& timeStamp != SaleItem.TIME_STAMP_IGNORE) return false;
 		//checking ranges
 		if (Double.doubleToLongBits(costLowerBound) >= Double
-				.doubleToLongBits(other.getCostUpperBound()))
+				.doubleToLongBits(other.getCostUpperBound())){
 			return false;
+		}
 		if (Double.doubleToLongBits(costUpperBound) <= Double
-				.doubleToLongBits(other.getCostLowerBound()))
+				.doubleToLongBits(other.getCostLowerBound())){
 			return false;
+		}
 		
 		return true;
 	}
@@ -161,10 +168,15 @@ public class SaleItem {
 	
 	@Override
 	public String toString() {
-		return "SaleItem [baseString=" + baseString + ", modifierString="
+		return "SaleItem [baseString=" + baseString + ", uuid="
+				+ uuid + ", modifierString="
 				+ modifierString + ", timeStamp=" + timeStamp
 				+ ", costLowerBound=" + costLowerBound + ", costUpperBound="
 				+ costUpperBound + "]";
+	}
+
+	public String getUuid() {
+		return uuid;
 	}
 	
 	

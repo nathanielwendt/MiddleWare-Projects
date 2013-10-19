@@ -2,20 +2,19 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+public class SubscriptionsDatabase {
 
-public class ItemDatabase {
-
-	private static ItemDatabase database = null;
+	private static SubscriptionsDatabase database = null;
 	private Tree<SaleItem> dataTree;
 
-	public static ItemDatabase getInstance(){
+	public static SubscriptionsDatabase getInstance(){
 		if(database == null){
-			database = new ItemDatabase();
+			database = new SubscriptionsDatabase();
 		}
 		return database;
 	}
 
-	public ItemDatabase(){
+	public SubscriptionsDatabase(){
 		this.dataTree = new Tree<SaleItem>(new SaleItem("root","level",new Date().getTime(),0,10));
 	}
 	
@@ -50,7 +49,7 @@ public class ItemDatabase {
 		Node<SaleItem> modifierStringNode = null;
 		if(modifierString.equals(SaleItem.MODIFIER_STRING_IGNORE)){
 			for(Node<SaleItem> node : modifierStringLevelChildren){
-				//get all nodes inside this node after comparision
+				//get all nodes inside this node after comparison
 				for(Node<SaleItem> innerNode : node.getChildren()){
 					for(Node<SaleItem> innerNodeTwo : innerNode.getChildren()){
 						if(innerNodeTwo.getData().compare(item)){
@@ -73,8 +72,24 @@ public class ItemDatabase {
 					if(node.getData().compare(item)){
 						returnList.add(node.getData());
 					}
+				}else if(node.getData().getModifierString().trim().equals(SaleItem.MODIFIER_STRING_IGNORE)){
+					//get all nodes inside this node after comparison
+					for(Node<SaleItem> innerNode : node.getChildren()){
+						for(Node<SaleItem> innerNodeTwo : innerNode.getChildren()){
+							if(innerNodeTwo.getData().compare(item)){
+								returnList.add(innerNodeTwo.getData());
+							}
+						}
+						if(innerNode.getData().compare(item)){
+							returnList.add(innerNode.getData());
+						}
+					}
+					if(node.getData().compare(item)){
+						returnList.add(node.getData());
+					}
 				}
 			}
+			
 			if(modifierStringNode == null){
 				return returnList;
 			}
@@ -99,6 +114,16 @@ public class ItemDatabase {
 			for(Node<SaleItem> node : yearStringLevelChildren){
 				if(getYearFromTimeStamp(node.getData().getTimeStamp()) == year){
 					yearStringNode = node;
+					if(node.getData().compare(item)){
+						returnList.add(node.getData());
+					}
+				}else if(getYearFromTimeStamp(node.getData().getTimeStamp()) == getYearFromTimeStamp(SaleItem.TIME_STAMP_IGNORE)){
+					//get all nodes inside this node after comparision
+					for(Node<SaleItem> innerNode : node.getChildren()){
+						if(innerNode.getData().compare(item)){
+							returnList.add(innerNode.getData());
+						}
+					}
 					if(node.getData().compare(item)){
 						returnList.add(node.getData());
 					}
@@ -274,8 +299,8 @@ public class ItemDatabase {
 			Node<SaleItem> node = costStringLevelChildren.get(i);
 			if(node.getData().getTimeStamp() == item.getTimeStamp() &&
 					node.getData().getCostUpperBound() == item.getCostUpperBound() &&
-					node.getData().getCostLowerBound() == item.getCostLowerBound()&&
-							node.getData().getUuid().equals(item.getUuid())){
+					node.getData().getCostLowerBound() == item.getCostLowerBound() &&
+					node.getData().getUuid().equals(item.getUuid())){
 				toBeChecked = i;
 			}
 		}
@@ -285,7 +310,7 @@ public class ItemDatabase {
 		costStringLevelChildren.add(new Node<SaleItem>(item,yearStringNode));
 	}
 
-	public int getYearFromTimeStamp(long timestamp){
+	public static int getYearFromTimeStamp(long timestamp){
 		Calendar c = Calendar.getInstance();
 		c.setTimeInMillis(timestamp);
 		return c.get(Calendar.YEAR);
@@ -296,7 +321,5 @@ public class ItemDatabase {
 	public String toString() {
 		return "" + dataTree;
 	}
-
-
-
+	
 }
