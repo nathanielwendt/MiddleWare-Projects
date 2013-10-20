@@ -1,5 +1,6 @@
 package entities;
 
+import includes.EventType;
 import setup.Init;
 
 import com.google.gson.Gson;
@@ -7,9 +8,18 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 
 public class Message {
+	
+	@Expose public static final int LEFT_BROKER_CHILD_LOCATION = 0;
+	@Expose public static final int RIGHT_BROKER_CHILD_LOCATION = 1;
+	@Expose public static final int FIRST_CLIENT_LOCATION = 2;
+	@Expose public static final int SECOND_CLIENT_LOCATION = 3;
+	
+	@Expose private EventType eventType;
 	@Expose private String header;
-	private Event event;
+	@Expose private String uuid;
+	@Expose private boolean[] messageSource;
 	@Expose private String eventAsJson;
+	private Event event;
 	public String debugString;
 	
 
@@ -20,10 +30,13 @@ public class Message {
 		this.header = header;
 	}
 	
-	public Message(String header, Event event){
+	public Message(String header, Event event, String uuid){
 		this.header = header;
 		this.event =  event;
+		this.setUuid(uuid);
 		this.setEventAsJson(Init.gsonConverter.toJson(event));
+		this.messageSource = new boolean[4];
+		this.setEventType(event.eventType);
 	}
 	
 	public boolean hasEvent(){
@@ -47,6 +60,10 @@ public class Message {
 		return returnString;
 	}
 	
+	public boolean[] getMessageSourceArray(){
+		return this.messageSource;
+	}
+	
 	public String toJson(){
 		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();;
 		return gson.toJson(this);
@@ -63,6 +80,38 @@ public class Message {
 
 	public void setEventAsJson(String eventAsJson) {
 		this.eventAsJson = eventAsJson;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+	
+	public void setLeftBrokerLocation(boolean value){
+		this.messageSource[LEFT_BROKER_CHILD_LOCATION] = value;
+	}
+	
+	public void setRightBrokerLocation(boolean value){
+		this.messageSource[RIGHT_BROKER_CHILD_LOCATION] = value;
+	}
+	
+	public void setFirstClientLocation(boolean value){
+		this.messageSource[FIRST_CLIENT_LOCATION] = value;
+	}
+	
+	public void setSecondClientLocation(boolean value){
+		this.messageSource[SECOND_CLIENT_LOCATION] = value;
+	}
+
+	public EventType getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(EventType eventType) {
+		this.eventType = eventType;
 	}
 	
 }
