@@ -21,7 +21,7 @@ public class SaleItem {
 	private final String uuid;
 	
 	public static void main(String[] args){
-		SubscriptionsDatabase data = SubscriptionsDatabase.getInstance();
+		InterestsDatabase data = InterestsDatabase.getInstance();
 		Calendar c = Calendar.getInstance();
 		SaleItem s1 = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000);
 		SaleItem s2 = new SaleItem("Car","lamborghini",SaleItem.TIME_STAMP_IGNORE,1000,3000);

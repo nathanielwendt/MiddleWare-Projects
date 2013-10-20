@@ -5,8 +5,8 @@ import java.util.Date;
 
 public class ItemDatabase {
 
-	private static ItemDatabase database = null;
-	private Tree<SaleItem> dataTree;
+	protected static ItemDatabase database = null;
+	protected Tree<SaleItem> dataTree;
 
 	public static ItemDatabase getInstance(){
 		if(database == null){

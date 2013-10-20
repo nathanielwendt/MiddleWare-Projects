@@ -19,6 +19,9 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
 	    this.brokerManager = brokerManager;
         try {
             this.socket = new Socket(Init.NETWORKNAME, nextBrokerPort);
+            if(Init.VERBOSE) {
+            	System.out.println("Master broker connected to child broker on port -> " + nextBrokerPort + " due to forwarding!" );
+            }
         } catch (IOException e) {
             System.err.println("Don't know about host: " + nextBrokerPort);
             System.exit(1);
@@ -30,11 +33,15 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
 	        this.outstream = new PrintWriter(this.socket.getOutputStream(), true);
 	        this.instream = new BufferedReader( new InputStreamReader(this.socket.getInputStream()));
 	        
-	        if(this.linkName == LinkName.createleft)
-	        	setConnection(brokerManager.left);
-	        else
-	        	setConnection(brokerManager.right);
-
+	        outstream.println("AttemptConnect::Broker");
+    		outstream.println(BrokerDistributor.getDeployedBrokerCount());
+    		outstream.println(BrokerDistributor.getDeployedClientCount());
+    		
+	        if(this.linkName == LinkName.createleft){
+	        	manageConectionWithLeftChildBroker();
+	        }else{
+	        	manageConectionWithRightChildBroker();
+	        }
 	        outstream.close();
 	        instream.close();
 	        socket.close();
@@ -43,10 +50,4 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
 	    }
     }
 	
-	protected void setConnection(LinkedBlockingQueue<Message> bq){
-		outstream.println("AttemptConnect::Broker");
-		outstream.println(BrokerDistributor.getDeployedBrokerCount());
-		outstream.println(BrokerDistributor.getDeployedClientCount());
-		super.setConnection(bq);
-	}
 }

@@ -10,12 +10,15 @@ public class Broker2 {
         ServerSocket serverSocket = null;
         boolean listening = true;
         
-        BrokerManager brokerManager = new BrokerManager(0);
+        BrokerManager brokerManager = new BrokerManager(1);
  
         try {
             serverSocket = new ServerSocket(Init.BROKERINDEX[1]);
+            if(Init.VERBOSE) {
+            	System.out.println("Started another broker and listening on -> " + Init.BROKERINDEX[1]);
+            }
         } catch (IOException e) {
-            System.err.println("Could not listen on port: " + Init.MASTERPORT);
+            System.err.println("Could not listen on port: " + Init.BROKERINDEX[1]);
             System.exit(-1);
         }
  

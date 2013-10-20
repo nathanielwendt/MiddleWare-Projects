@@ -25,17 +25,19 @@ public class BrokerDistributor {
 		++deployedClientCount;
 	}
 	
+	/*
 	public static synchronized int getNextClientNumber(){
 		return ++deployedClientCount;
 	}
 	
+	public static synchronized int getNumBrokers(){
+		return numBrokers;
+	}
+	*/
+	
 	public static synchronized void updateCounts(int brokerCount, int clientCount){
 		deployedBrokerCount = brokerCount;
 		deployedClientCount = clientCount;
-	}
-	
-	public static synchronized int getNumBrokers(){
-		return numBrokers;
 	}
 	
 	public static synchronized int getDeployedBrokerCount(){

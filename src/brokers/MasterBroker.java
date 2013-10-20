@@ -16,6 +16,9 @@ public class MasterBroker {
  
         try {
             serverSocket = new ServerSocket(Init.MASTERPORT);
+            if(Init.VERBOSE) {
+            	System.out.println("Started master broker and listening on -> " + Init.MASTERPORT);
+            }
         } catch (IOException e) {
             System.err.println("Could not listen on port: " + Init.MASTERPORT);
             System.exit(-1);
@@ -24,8 +27,6 @@ public class MasterBroker {
         int i = 1;
         while(listening){
         	new BrokerLinkThread(serverSocket.accept(), brokerManager, i++).start();
-        	//Message tester = new Message("message for first left child, when he/she is ready");
-        	//brokerManager.left.add(tester);
         }
         serverSocket.close();
 	}

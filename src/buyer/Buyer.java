@@ -11,7 +11,6 @@ public class Buyer {
 	public LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	
     public static void main(String[] args) throws IOException {
- 
     	Buyer buyer = new Buyer();
     	new BuyerIOThread(buyer.incoming, buyer.outgoing).start();
 		buyer.SendNotice();
