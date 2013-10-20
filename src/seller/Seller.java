@@ -41,6 +41,7 @@ public class Seller {
     	//this.outgoing.add(saleNotice);
     }
     
+    /*
     public void PublishBidUpdate(int itemId, double bidUpdatePrice){
     	BidUpdate bidUpdate = new BidUpdate(itemId,bidUpdatePrice);
     	bidUpdate.isPublish = true;
@@ -55,11 +56,12 @@ public class Seller {
     	this.outgoing.add(saleNoticeMsg);
     }
     
-    public void SubscribeBid(int itemId){
-    	Bid bid = new Bid(itemId, 0.00);
+    public void SubscribeBid(String itemUUID){
+    	Bid bid = new Bid(itemUUID, 0.00);
     	bid.isPublish = false;
     	Message bidMsg = new Message(this.UUID,bid);
     	this.outgoing.add(bidMsg);
     }
+    */
 
 }

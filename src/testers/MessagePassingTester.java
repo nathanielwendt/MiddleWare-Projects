@@ -8,7 +8,7 @@ import events.*;
 public class MessagePassingTester {
 	public static void main(String[] argv){
 		
-		
+		/*
 		//Event -> String
 		Bid bid = new Bid(19204,22.24);
 		//bid.isPublish = true;  default is set to false
@@ -51,6 +51,9 @@ public class MessagePassingTester {
 				System.out.println(((SaleNotice) msg3.event).getBuyerId());
 				System.out.println(((SaleNotice) msg3.event).getSaleValue());
 			}
+			
+			
 		}
+		*/
 	}
 }

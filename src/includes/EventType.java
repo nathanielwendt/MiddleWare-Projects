@@ -3,7 +3,9 @@ package includes;
 public enum EventType {
 	listItem, 
 	bid, 
-	bidUpdate, 
+	bidUpdate,
+	saleitem,
+	interestbidupdate,
 	saleNotice;
 	
 	public static EventType stringToEvType(String compare){
@@ -15,6 +17,10 @@ public enum EventType {
 			return EventType.bidUpdate;
 		else if(compare.equals("itemSold"))
 			return EventType.saleNotice;
+		else if(compare.equals("availableitem") || compare.equals("interest"))
+			return EventType.saleitem;
+		else if(compare.equals("interestbidupdate"))
+			return EventType.interestbidupdate;
 		else
 			return null;
 	}

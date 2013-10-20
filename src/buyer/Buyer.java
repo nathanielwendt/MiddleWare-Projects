@@ -47,15 +47,17 @@ public class Buyer {
     	//this.outgoing.add(saleNotice);
     }
     
-    public void PublishBid(int itemId, double bidValue){
-    	Bid bid = new Bid(itemId, bidValue);
+    /*
+    
+    public void PublishBid(String itemUUID, double bidValue){
+    	Bid bid = new Bid(itemUUID, bidValue);
     	bid.isPublish = true;
     	Message bidMsg = new Message(this.UUID,bid);
     	this.outgoing.add(bidMsg);
     }
     
-    public void SubscribeBid(int itemId){
-    	Bid bid = new Bid(itemId, 0.00);
+    public void SubscribeBid(String itemUUID){
+    	Bid bid = new Bid(itemUUID, 0.00);
     	bid.isPublish = false;
     	Message bidMsg = new Message(this.UUID,bid);
     	this.outgoing.add(bidMsg);
@@ -75,4 +77,5 @@ public class Buyer {
     	this.outgoing.add(saleNoticeMsg);
     }
 
+	*/
 }

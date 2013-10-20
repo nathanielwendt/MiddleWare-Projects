@@ -18,7 +18,6 @@ public class BrokerManager {
 	//seller/buyer clients
 	public LinkedBlockingQueue<Message> pos0 = new LinkedBlockingQueue<Message>();
 	public LinkedBlockingQueue<Message> pos1 = new LinkedBlockingQueue<Message>();
-	//public LinkedBlockingQueue<Message> subs = new LinkedBlockingQueue<Message>();
 	
 	public BrokerManager(int brokerId){
 		this.brokerId = brokerId;

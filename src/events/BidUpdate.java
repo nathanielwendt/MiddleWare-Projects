@@ -1,45 +1,54 @@
 package events;
 
-import entities.Event;
 import includes.EventType;
+import setup.Init;
+
+import com.google.gson.Gson;
+
+import entities.Event;
 
 public class BidUpdate extends Event {
-	private int itemId;
+	private String itemUUID;
 	private double bidUpdateValue;
+	private String bidderUUID;
 	
 	public BidUpdate(){
 		this.eventType = EventType.bidUpdate;
+		this.isPublish = true;
 	}
 
-	public BidUpdate(int itemId, double bidValue){
+	public BidUpdate(String bidderUUID,String itemUUID,double bidValue){
 		this.eventType = EventType.bidUpdate;
-		this.itemId = itemId;
+		this.bidderUUID = bidderUUID;
+		this.itemUUID = itemUUID;
 		this.bidUpdateValue = bidValue;
-	}
-	
-	@Override
-	protected String bodyToString() {
-		String temp = "";
-		temp += itemId + "|";
-		temp += bidUpdateValue + "|";
-		return temp;
+		this.isPublish = true;
 	}
 
-	@Override
-	protected void stringToBody(String string) {
-		String[] segments = string.split("\\|");
-		if(segments.length > 1){
-			this.itemId = Integer.parseInt(segments[1]);
-			this.bidUpdateValue = Double.parseDouble(segments[2]);
-		}
-	}
-	
-	public int getItemId(){
-		return this.itemId;
+	public String getItemUUID(){
+		return this.itemUUID;
 	}
 	
 	public double getBidUpdateValue(){
 		return this.bidUpdateValue;
+	}
+	
+	public String toJson(){
+		Gson gson = Init.gsonConverter;
+		return gson.toJson(this);
+	}
+	
+	public static BidUpdate getObjectFromJson(String json){
+		Gson gson = Init.gsonConverter;
+		return gson.fromJson(json, BidUpdate.class);
+	}
+
+	public String getBidderUUID() {
+		return bidderUUID;
+	}
+
+	public void setBidderUUID(String bidderUUID) {
+		this.bidderUUID = bidderUUID;
 	}
 	
 	

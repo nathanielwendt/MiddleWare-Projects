@@ -1,11 +1,17 @@
 package entities;
 
-import events.*;
+import setup.Init;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 
 public class Message {
-	public String header;
-	public Event event = null;
+	@Expose private String header;
+	private Event event;
+	@Expose private String eventAsJson;
 	public String debugString;
+	
 
 	public Message(){}
 	
@@ -17,10 +23,19 @@ public class Message {
 	public Message(String header, Event event){
 		this.header = header;
 		this.event =  event;
+		this.setEventAsJson(Init.gsonConverter.toJson(event));
 	}
 	
 	public boolean hasEvent(){
 		return (this.event != null);
+	}
+	
+	public String getHeader(){
+		return this.header;
+	}
+	
+	public Event getEvent(){
+		return this.event;
 	}
 	
 	public String toString(){
@@ -32,28 +47,22 @@ public class Message {
 		return returnString;
 	}
 	
-	public void populateMessage(String input){
-		String [] segments = input.split("\\|");
-		if(segments.length > 1)
-			this.header = segments[1];
-		if(segments.length >= 3){ //ensure that no seg faults will occur
-			this.instantiateEventFromString(segments[2]);
-			String temp = "|";
-			for(int i = 3; i < segments.length; i++){
-				temp += segments[i] + "|";
-			}
-			this.event.populateEvent(temp);
-		}
+	public String toJson(){
+		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();;
+		return gson.toJson(this);
 	}
 	
-	public void instantiateEventFromString(String compare){
-		compare = compare.toLowerCase();
-		if(compare.equals("listItem")){}
-		else if(compare.equals("bid"))
-			this.event = new Bid();
-		else if(compare.equals("bidupdate"))
-			this.event = new BidUpdate();
-		else if(compare.equals("salenotice"))
-			this.event = new SaleNotice();
+	public static Message getObjectFromJson(String json){
+		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();;
+		return gson.fromJson(json, Message.class);
 	}
+
+	public String getEventAsJson() {
+		return eventAsJson;
+	}
+
+	public void setEventAsJson(String eventAsJson) {
+		this.eventAsJson = eventAsJson;
+	}
+	
 }
