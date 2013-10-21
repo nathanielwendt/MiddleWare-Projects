@@ -1,15 +1,21 @@
 package seller;
 
+import includes.EventType;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import entities.Message;
 import setup.Init;
+import entities.Message;
+import events.Bid;
+import events.BidUpdate;
+import events.SaleItem;
 
 public class SellerIOThread extends Thread {
 	private Socket socket = null;
@@ -19,11 +25,17 @@ public class SellerIOThread extends Thread {
 	private int hostPort = Init.MASTERPORT;
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
+	private Seller sellerInstance;
 
+	private ArrayList<Bid> bidsReceived;
+	private ArrayList<SaleItem> publishedAvailableItems;
 
-	public SellerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
+	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
 		this.incoming = incoming;
 		this.outgoing = outgoing;
+		this.setBidsReceived(new ArrayList<Bid>());
+		this.setPublishedAvailableItems(new ArrayList<SaleItem>());
+		this.sellerInstance = sellerInstance;
 	}
 
 	public void run() {   
@@ -71,8 +83,33 @@ public class SellerIOThread extends Thread {
 							System.out.println("Established persistent connection with a broker server.");
 							fromServer = "";
 						}
-					}else{
-						System.out.println("Unidentified message from server -> " + fromServer);
+					}else{ //means its a proper message
+						Message receivedMessage = Message.getObjectFromJson(fromServer);
+						if(receivedMessage != null){
+							if(Init.VERBOSE) {
+								System.out.println("New message received from the broker.");
+							}
+							if(receivedMessage.getEventType() == EventType.bid){
+								Bid receivedBid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
+								this.bidsReceived.add(receivedBid);
+								if(Init.VERBOSE) {
+									System.out.println("The message has been identified to be a bid from a buyer.");
+									System.out.println("The bid is -> " + receivedBid.toJson());
+								}
+								
+								//some logic to figure out whether to publish or not needs to go here
+								
+								BidUpdate update = new BidUpdate(receivedBid.getBidderUUID(),receivedBid.getItemUUID(),receivedBid.getBidValue());
+								Message toBePublished = new Message("Bid update for an item",update,update.getItemUUID());
+								this.outgoing.add(toBePublished);
+								if(Init.VERBOSE) {
+									System.out.println("The bid update for the received bid has been published.");
+								}
+							}else{
+								System.err.println("Seller just received an unsupported message.Message -> " + receivedMessage.toJson());
+							}
+
+						}
 					}
 				}
 				//Send all the messages that need to be sent from the outgoing queue
@@ -117,4 +154,21 @@ public class SellerIOThread extends Thread {
 			e.printStackTrace();
 		}
 	}
+
+	public ArrayList<Bid> getBidsReceived() {
+		return bidsReceived;
+	}
+
+	public void setBidsReceived(ArrayList<Bid> bidsReceived) {
+		this.bidsReceived = bidsReceived;
+	}
+
+	public ArrayList<SaleItem> getPublishedAvailableItems() {
+		return publishedAvailableItems;
+	}
+
+	public void setPublishedAvailableItems(ArrayList<SaleItem> publishedAvailableItems) {
+		this.publishedAvailableItems = publishedAvailableItems;
+	}
+	
 }

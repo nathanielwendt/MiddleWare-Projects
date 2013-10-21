@@ -2,9 +2,10 @@ package buyer;
 import includes.UUIDGenerator;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import setup.Init;
 import entities.Message;
 import events.Bid;
 import events.InterestBidUpdate;
@@ -15,17 +16,21 @@ public class Buyer {
 	private LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
 	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	private BuyerIOThread communicationThread;
-	private ArrayList<SaleItem> publishedInterests;
 	
     public static void main(String[] args) throws IOException {
     	Buyer buyer = new Buyer();
-    	buyer.publishInterest("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
-        while(true){
-			try{
-				Thread.sleep(3000);
-				buyer.printNotices();
-			} catch (InterruptedException e){
-				e.printStackTrace();
+        Scanner scan = new Scanner(System.in);
+    	while(true){
+			System.out.println("Enter choice :");
+			String input = scan.nextLine();
+			if(input.toLowerCase().equals("interestone")){
+				buyer.publishInterest("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
+			}else if(input.toLowerCase().equals("interesttwo")){
+				buyer.publishInterest("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
+			}else if(input.toLowerCase().equals("bidupdateinterest")){
+				buyer.interestBidUpdate(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid());
+			}else if(input.toLowerCase().equals("bid")){
+				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
 			}
         }
     }
@@ -34,7 +39,6 @@ public class Buyer {
     	this.setUUID(UUIDGenerator.getNextUUID());
     	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing);
     	this.communicationThread.start();
-    	this.publishedInterests = new ArrayList<SaleItem>();
     }
     
     
@@ -46,6 +50,10 @@ public class Buyer {
 			System.out.println(nextMsg.debugString);		
 		}
     	
+    }
+    
+    public BuyerIOThread getCommunicationThread(){
+    	return this.communicationThread;
     }
     
 
@@ -71,16 +79,15 @@ public class Buyer {
 		//need to be cached in the interest database
 		SaleItem interest = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
 		interest.setInterest(true);
-		this.publishedInterests.add(interest);
+		this.communicationThread.getPublishedInterests().add(interest);
 		Message message  = new Message("Interest request from a buyer",interest,interest.getUuid());
 		this.outgoing.add(message);
 	}
 	
 	public void interestBidUpdate(String itemUUID){
-		//these need to be cached on the broker the buyer is connected to, just check before forwarding to the buyer, incase
-		// a bid comes along.
+		//these need to be cached to enable receipt of bid updates.
 		InterestBidUpdate interest = new InterestBidUpdate(this.uuid,itemUUID);
-		Message message  = new Message("Interest bid update from buyer",interest,interest.getRequestUUID());
+		Message message  = new Message("Interest bid update from buyer",interest,interest.getItemUUID());
 		this.outgoing.add(message);
 	}
     

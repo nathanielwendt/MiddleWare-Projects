@@ -4,7 +4,10 @@ import includes.UUIDGenerator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import setup.Init;
 
 import entities.Message;
 import events.BidUpdate;
@@ -16,29 +19,27 @@ public class Seller {
 	private LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
 	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	private SellerIOThread communicationThread;
-	private ArrayList<SaleItem> publishedAvailableItems;
+	
 	
     public static void main(String[] args) throws IOException {
  
     	Seller seller = new Seller();
-    	Calendar c = Calendar.getInstance();
-    	c.set(Calendar.YEAR, 2009);
-    	seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
-        while(true){
-			try{
-				Thread.sleep(3000);
-				seller.printNotices();
-			} catch (InterruptedException e){
-				e.printStackTrace();
+    	Scanner scan = new Scanner(System.in);
+    	while(true){
+			System.out.println("Enter choice :");
+			String input = scan.nextLine();
+			if(input.toLowerCase().equals("publishitem")){
+				Calendar c = Calendar.getInstance();
+		    	c.set(Calendar.YEAR, 2009);
+		    	seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
 			}
         }
     }
     
     public Seller(){
     	this.setUuid(UUIDGenerator.getNextUUID());
-    	this.communicationThread = new SellerIOThread(this.incoming, this.outgoing);
+    	this.communicationThread = new SellerIOThread(this,this.incoming, this.outgoing);
     	this.communicationThread.start();
-    	this.publishedAvailableItems = new ArrayList<SaleItem>();
     }
     
     public void printNotices(){
@@ -70,7 +71,7 @@ public class Seller {
 		//need to be looked up on the interest database and cached everywhere in a hashmap
 		SaleItem item = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
 		item.setInterest(false);
-		this.publishedAvailableItems.add(item);
+		this.communicationThread.getPublishedAvailableItems().add(item);
 		Message message  = new Message("Available item from a seller",item,item.getUuid());
 		this.outgoing.add(message);
 	}
