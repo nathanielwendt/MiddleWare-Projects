@@ -11,7 +11,7 @@ public class ItemDatabase {
 	protected Tree<SaleItem> dataTree;
 
 	public ItemDatabase(){
-		this.dataTree = new Tree<SaleItem>(new SaleItem("root","level",new Date().getTime(),0,10));
+		this.dataTree = new Tree<SaleItem>(new SaleItem("root","level",new Date().getTime(),0,10,"dummy"));
 	}
 	
 	/**

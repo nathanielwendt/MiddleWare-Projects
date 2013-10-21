@@ -13,6 +13,7 @@ public class Message {
 	@Expose public static final int RIGHT_BROKER_CHILD_LOCATION = 1;
 	@Expose public static final int FIRST_CLIENT_LOCATION = 2;
 	@Expose public static final int SECOND_CLIENT_LOCATION = 3;
+	@Expose public static final int PARENT_LOCATION = 4;
 	
 	@Expose private EventType eventType;
 	@Expose private String header;
@@ -35,7 +36,7 @@ public class Message {
 		this.event =  event;
 		this.setUuid(uuid);
 		this.setEventAsJson(Init.gsonConverter.toJson(event));
-		this.messageSource = new boolean[4];
+		this.messageSource = new boolean[5];
 		this.setEventType(event.eventType);
 	}
 	
@@ -106,6 +107,14 @@ public class Message {
 		this.messageSource[SECOND_CLIENT_LOCATION] = value;
 	}
 
+	public void setParentLocation(boolean value){
+		this.messageSource[PARENT_LOCATION] = value;
+	}
+	
+	public void setMessageSourceValue(int location ,boolean value){
+		this.messageSource[location] = value;
+	}
+	
 	public EventType getEventType() {
 		return eventType;
 	}

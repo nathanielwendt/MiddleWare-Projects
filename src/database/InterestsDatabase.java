@@ -18,7 +18,7 @@ import events.SaleItem;
 public class InterestsDatabase extends ItemDatabase{
 
 	public InterestsDatabase(){
-		this.dataTree = new Tree<SaleItem>(new SaleItem("root","level",new Date().getTime(),0,10));
+		this.dataTree = new Tree<SaleItem>(new SaleItem("root","level",new Date().getTime(),0,10,"dummy"));
 	}
 
 	/**

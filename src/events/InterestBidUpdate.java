@@ -1,6 +1,7 @@
 package events;
 
 import includes.EventType;
+import includes.UUIDGenerator;
 import setup.Init;
 
 import com.google.gson.Gson;
@@ -10,10 +11,14 @@ import entities.Event;
 
 public class InterestBidUpdate extends Event{
 
+	private String requestUUID;
 	private String itemUUID;
+	private String userUUID;
 	
-	public InterestBidUpdate(String itemUUID){
+	public InterestBidUpdate(String userUUID,String itemUUID){
 		this.itemUUID = itemUUID;
+		this.setUserUUID(userUUID);
+		this.requestUUID = UUIDGenerator.getNextUUID();
 		this.eventType = EventType.interestbidupdate;
 		this.isPublish = true;
 	}
@@ -34,5 +39,21 @@ public class InterestBidUpdate extends Event{
 
 	public void setItemUUID(String itemUUID) {
 		this.itemUUID = itemUUID;
+	}
+
+	public String getUserUUID() {
+		return userUUID;
+	}
+
+	public void setUserUUID(String userUUID) {
+		this.userUUID = userUUID;
+	}
+
+	public String getRequestUUID() {
+		return requestUUID;
+	}
+
+	public void setRequestUUID(String requestUUID) {
+		this.requestUUID = requestUUID;
 	}
 }

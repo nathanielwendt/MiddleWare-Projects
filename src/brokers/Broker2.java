@@ -15,7 +15,7 @@ public class Broker2 {
         try {
             serverSocket = new ServerSocket(Init.BROKERINDEX[1]);
             if(Init.VERBOSE) {
-            	System.out.println("Started another broker and listening on -> " + Init.BROKERINDEX[1]);
+            	System.out.println("Started another broker and listening on port number " + Init.BROKERINDEX[1]);
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port: " + Init.BROKERINDEX[1]);

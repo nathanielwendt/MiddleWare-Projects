@@ -20,7 +20,7 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
         try {
             this.socket = new Socket(Init.NETWORKNAME, nextBrokerPort);
             if(Init.VERBOSE) {
-            	System.out.println("Master broker connected to child broker on port -> " + nextBrokerPort + " due to forwarding!" );
+            	System.out.println("Master broker connected to child broker on port " + nextBrokerPort + " due to forwarding!" );
             }
         } catch (IOException e) {
             System.err.println("Don't know about host: " + nextBrokerPort);
@@ -38,9 +38,9 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
     		outstream.println(BrokerDistributor.getDeployedClientCount());
     		
 	        if(this.linkName == LinkName.createleft){
-	        	manageConectionWithLeftChildBroker();
+	        	manageConection(brokerManager.left,BrokerManager.LEFT_BROKER_CHILD);
 	        }else{
-	        	manageConectionWithRightChildBroker();
+	        	manageConection(brokerManager.right,BrokerManager.RIGHT_BROKER_CHILD);
 	        }
 	        outstream.close();
 	        instream.close();

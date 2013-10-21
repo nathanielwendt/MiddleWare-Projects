@@ -1,5 +1,7 @@
 package buyer;
 
+import includes.EventType;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,17 +10,20 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import brokers.BrokerManager;
+
 import entities.Message;
+import events.SaleItem;
 import setup.Init;
 
 public class BuyerIOThread extends Thread {
-	public Socket socket = null;
-	public PrintWriter outstream = null;
-	public BufferedReader instream = null;
-	public String networkName = Init.NETWORKNAME;
-	public int hostPort = Init.MASTERPORT;
-	public LinkedBlockingQueue<Message> incoming = null;
-	public LinkedBlockingQueue<Message> outgoing = null;
+	private Socket socket = null;
+	private PrintWriter outstream = null;
+	private BufferedReader instream = null;
+	private String networkName = Init.NETWORKNAME;
+	private int hostPort = Init.MASTERPORT;
+	private LinkedBlockingQueue<Message> incoming = null;
+	private LinkedBlockingQueue<Message> outgoing = null;
 
 
 	public BuyerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
@@ -60,27 +65,41 @@ public class BuyerIOThread extends Thread {
 			try {
 				if(this.instream.ready()){
 					fromServer = this.instream.readLine();
-					Message testmsg = new Message(fromServer);
-					this.incoming.add(testmsg);
-				}
-				if(fromServer.equals("forwarding")){
-					if(Init.VERBOSE) {
-						System.out.println("Broker server full, so request forworded to another broker server.");
-					}
-					break;
-				}else if(fromServer.equals("Connection Established")) {
-					if(Init.VERBOSE){
-						System.out.println("Established persistent connection with a broker server.");
-					}
-				}
 
+					if(fromServer.equals("forwarding")){
+						if(Init.VERBOSE) {
+							System.out.println("Broker server full, so request forworded to another broker server.");
+							fromServer = "";
+						}
+						break;
+					}else if(fromServer.equals("Connection Established")) {
+						if(Init.VERBOSE){
+							System.out.println("Established persistent connection with a broker server.");
+							fromServer = "";
+						}
+					}else{// means its a proper message
+						Message receivedMessage = Message.getObjectFromJson(fromServer);
+						if(receivedMessage != null){
+							if(Init.VERBOSE) {
+								System.out.println("New message received from the broker.");
+							}
+							if(receivedMessage.getEventType() == EventType.saleitem){
+								SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
+								if(!item.isInterest()){
+									if(Init.VERBOSE) {
+										System.out.println("The message has been identified to be an available item.");
+										System.out.println("The item is -> " + item.toJson());
+									}
+
+								}
+							}
+						}
+					}
+				}
 				//Send all the messages that need to be sent from the outgoing queue
 				Message nextMsg = (Message) outgoing.poll();
 				if(nextMsg != null){
-					//inform the socket connection of the message
-
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
+					outstream.println(nextMsg.toJson());		
 				}
 
 				if(Init.ENABLE_THREAD_SLEEP){

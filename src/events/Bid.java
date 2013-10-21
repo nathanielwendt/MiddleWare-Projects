@@ -14,7 +14,7 @@ public class Bid extends Event {
 	private String bidderUUID;
 	
 	public static void main(String[] args){
-		SaleItem s = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000);
+		SaleItem s = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000,"FSdf");
 		Message b = new Message("message",s,s.getUuid());
 		System.out.println(b.toJson());
 		System.out.println(Message.getObjectFromJson(b.toJson()).getMessageSourceArray());

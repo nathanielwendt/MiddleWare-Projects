@@ -1,67 +1,89 @@
 package brokers;
 
-import java.io.*;
-import java.net.*;
+import includes.EventType;
+import includes.LinkName;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
-
 import entities.Message;
-import includes.LinkName;
+import events.InterestBidUpdate;
+import events.SaleItem;
 
 public class BrokerLinkThread extends Thread {
 	protected Socket socket = null;
 	protected BrokerManager brokerManager = null;
 	protected PrintWriter outstream;
 	protected BufferedReader instream;
-	 
+
 	public BrokerLinkThread(){}
-	
-    public BrokerLinkThread(Socket socket, BrokerManager brokerManager, int priority) {
-	    super("BrokerCommunicateThread");
-	    this.socket = socket;
-	    this.brokerManager = brokerManager;
-	    setPriority(priority); 
-    }
- 
-    public void run() { 
-	    try {
-	        this.outstream = new PrintWriter(this.socket.getOutputStream(), true);
-	        this.instream = new BufferedReader( new InputStreamReader(this.socket.getInputStream()));
-	        String inputLine;
-	        
-	        inputLine = this.instream.readLine();
-	        System.out.println("Detected a: " + inputLine);
-	        if(inputLine.equals("AttemptConnect::Broker")){
-	        	//inform this new broker of the global count information
-	        	int newBrokerCount = Integer.parseInt(this.instream.readLine());
-	        	int newClientCount = Integer.parseInt(this.instream.readLine());
-	        	BrokerDistributor.updateCounts(newBrokerCount, newClientCount);
-	        	//brokerManager.setBrokerId(newBrokerCount);
-	        	resolveListening(brokerManager.getParentLink());
-	        } else if(inputLine.equals("AttemptConnect::Buyer") || inputLine.equals("AttemptConnect::Seller")) {
-	        	BrokerDistributor.incrementClientCount();
-	        	System.out.println("that must be a client");
-	        	resolveListening(brokerManager.getNextLink());
-	        } else {
-	        	System.out.println("invalid connection credentials, disconnecting");
-	        }
-	        outstream.close();
-	        instream.close();
-	        socket.close();
-	        
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
-    }
-    
-    protected void resolveListening(LinkName nextLinkName){
-    	System.out.println(nextLinkName);
+
+	public BrokerLinkThread(Socket socket, BrokerManager brokerManager, int priority) {
+		super("BrokerCommunicateThread");
+		this.socket = socket;
+		this.brokerManager = brokerManager;
+		setPriority(priority); 
+	}
+
+	public void run() { 
+		try {
+			this.outstream = new PrintWriter(this.socket.getOutputStream(), true);
+			this.instream = new BufferedReader( new InputStreamReader(this.socket.getInputStream()));
+			String inputLine;
+
+			inputLine = this.instream.readLine();
+			if(Init.VERBOSE) {
+				System.out.println("New incoming message -> " + inputLine );
+			}
+			if(inputLine.equals("AttemptConnect::Broker")){
+				if(Init.VERBOSE) {
+					System.out.println("The incoming connection has been resolved to be a broker.");
+				}
+				//inform this new broker of the global count information
+				int newBrokerCount = Integer.parseInt(this.instream.readLine());
+				int newClientCount = Integer.parseInt(this.instream.readLine());
+				BrokerDistributor.updateCounts(newBrokerCount, newClientCount);
+				resolveListening(brokerManager.getParentLink());
+			} else if(inputLine.equals("AttemptConnect::Buyer") || inputLine.equals("AttemptConnect::Seller")) {
+				if(Init.VERBOSE) {
+					System.out.println("The incoming connection has been resolved to be a client of type " + (inputLine.contains("Buyer") ? "Buyer" : "Seller"));
+				}
+				BrokerDistributor.incrementClientCount();
+				resolveListening(brokerManager.getNextLink());
+			} else {
+				if(Init.VERBOSE) {
+					System.out.println("The credentials used to establish a connection as invalid. The process has been aborted!");
+				}
+			}
+			outstream.close();
+			instream.close();
+			socket.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	protected void resolveListening(LinkName nextLinkName){
+		if(Init.VERBOSE) {
+			if(nextLinkName != LinkName.forward){
+				System.out.println("It has been decided that incoming connection should be linked to " + nextLinkName);
+			}else{
+				System.out.println("As the current broker is full, it has been decided that the incoming connection will be forwarded to a child broker");
+			}
+		}
 		if(nextLinkName == LinkName.pos0){
-			manageConectionWithFirstClientChild();
+			manageConection(brokerManager.pos0,BrokerManager.FIRST_CLIENT_CHILD);
 		}
 		else if(nextLinkName == LinkName.pos1){
-			manageConectionWithSecondClientChild();
+			manageConection(brokerManager.pos1,BrokerManager.SECOND_CLIENT_CHILD);
 		}
 		else if(nextLinkName == LinkName.createleft){
 			int nextBrokerPort = BrokerDistributor.getNextBrokerPort();
@@ -78,7 +100,9 @@ public class BrokerLinkThread extends Thread {
 		else if(nextLinkName == LinkName.forward){
 			if(brokerManager.getBrokerId() != 1){ //regular broker
 				int childNodePort = BrokerDistributor.getBrokerAtIndex(BrokerDistributor.getDeployedBrokerCount() - 1);
-				System.out.println("fowrad to: " + childNodePort);
+				if(Init.VERBOSE) {
+					System.out.println("Current broker is full. The client is being forwarded to the broker on " + childNodePort);
+				}
 				outstream.println("forwarding");
 				outstream.println(childNodePort);
 			} else { //Master Broker, perform full port forwarding
@@ -86,43 +110,109 @@ public class BrokerLinkThread extends Thread {
 				double nodeDest = (double) clientCount;
 				nodeDest = Math.ceil(nodeDest / 2.0);
 				int nodeDestAsInt  = (int) nodeDest;
-				System.out.println("forward to: " + nodeDestAsInt);
+				if(Init.VERBOSE) {
+					System.out.println("Current broker is full. The client is being forwarded to the broker on " + nodeDestAsInt);
+				}
 				outstream.println("forwarding");
 				outstream.println( BrokerDistributor.getBrokerAtIndex(nodeDestAsInt - 2) ); //2 offset since host isn't included and since indexing starts at 0 but we want it to start at 1
 			}
 		}
 		else if(nextLinkName == LinkName.parent){
-			manageConectionWithParent();
+			manageConection(brokerManager.parent,BrokerManager.PARENT);
 		}
-    }
-    
-    
-    
-    protected void manageConectionWithRightChildBroker(){
-    	LinkedBlockingQueue<Message> rightChildBroker = brokerManager.left;
-    	try{
-    		outstream.println("Connection Established"); // this will write to the parent
-    		String inputLine = "";
-    		Message nextMsg;
-    		while(true){
-    			
-    			//check connected entity for incoming messages
-    			if(instream.ready()){
-    				inputLine = instream.readLine();
-    				Message testmsg = new Message(inputLine);
-    				rightChildBroker.add(testmsg);
-    			}
-    			
-	
-    			//check for new events or subscription that should be made known to the entity
-    			nextMsg = (Message) rightChildBroker.poll();
-				if(nextMsg != null){
-					//inform the socket connection of the message
-					
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
+	}
+
+
+
+	protected void manageConection(LinkedBlockingQueue<Message> firstChildQueue, int dataSource){
+		try{
+			outstream.println("Connection Established"); 
+			if(Init.VERBOSE) {
+				System.out.println("Established connection with " + BrokerManager.getDebugString(dataSource));
+			}
+			String inputLine = "";
+			Message nextMsg;
+			while(true){
+				//check connected entity for incoming messages
+				if(instream.ready()){
+					inputLine = instream.readLine();
+					if(Init.VERBOSE) {
+						System.out.println("New message received from " + BrokerManager.getDebugString(dataSource));
+						System.out.println("The message is -> " + inputLine);
+					}
+					if(inputLine.equals("forwarding")){
+						if(Init.VERBOSE) {
+							System.out.println("Broker server full, so request forworded to another broker server.");
+							inputLine = "";
+						}
+						break;
+					}else if(inputLine.equals("Connection Established")) {
+						if(Init.VERBOSE){
+							System.out.println("Established persistent connection with a child broker.");
+							inputLine = "";
+						}
+					}else{
+						Message receivedMessage = Message.getObjectFromJson(inputLine);
+						if(receivedMessage.getEventType() == EventType.saleitem){
+							SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
+							if(item.isInterest()){ //coming from a buyer or a child
+								this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+								this.brokerManager.getInterestsDB().addItemToDataBase(item);
+								receivedMessage.setMessageSourceValue(dataSource, true);
+								this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
+								receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+								if(Init.VERBOSE) {
+									System.out.println("It has been identified as an interest and propagated to the parent.");
+								}
+							}else{ //coming from a seller or a child, needs to be matched and propagated
+								this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
+								this.brokerManager.getAvailableItemDatabase().put(receivedMessage.getUuid(), item);
+								receivedMessage.setMessageSourceValue(dataSource, true);
+								this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
+								receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+								if(Init.VERBOSE) {
+									System.out.println("It has been identified as an available item.");
+								}
+								ArrayList<SaleItem> matches = this.brokerManager.getInterestsDB().getSearchResult(item);
+								if(Init.VERBOSE) {
+									System.out.println("There are " + matches.size() + " interest matches to the available item in the database.");
+								}
+								for(SaleItem s : matches){
+									boolean[] propagateValues = this.brokerManager.getMessageSource().get(s.getUuid());
+									for(int i=0;i<propagateValues.length;i++){
+										if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
+											this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
+										}
+									}
+								}
+								if(Init.VERBOSE) {
+									System.out.println("The matches have been notified appropriately.");
+								}
+							}
+						}else if(receivedMessage.getEventType() == EventType.interestbidupdate){ //coming from a buyer
+							InterestBidUpdate interest = InterestBidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
+							this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+							this.brokerManager.getInterestBidUpdates().put(receivedMessage.getUuid(), interest);
+							receivedMessage.setMessageSourceValue(dataSource, true);
+							this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
+							receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+							if(Init.VERBOSE) {
+								System.out.println("It has been identified as an interest bid update an propagated to the parent.");
+							}
+						}else{
+							if(Init.VERBOSE) {
+								System.err.println("Message type not identified.");
+							}
+						}
+					}
 				}
-				
+
+				//poll the queue and send them to the destination
+				nextMsg = (Message) firstChildQueue.poll();
+				if(nextMsg != null){
+					outstream.println(nextMsg.toJson());		
+				}
+
 				if(Init.ENABLE_THREAD_SLEEP){
 					try{
 						Thread.sleep(Init.THREAD_SLEEP_INTERVAL); 
@@ -130,184 +220,12 @@ public class BrokerLinkThread extends Thread {
 						e.printStackTrace();
 					}
 				}
-				
-    		}
-    	} catch (IOException e) {
-    		System.out.println("Socket was closed from the other side");
-    		e.printStackTrace();
-    	}
-    }
-    
-    
-    
-    
-    protected void manageConectionWithLeftChildBroker(){
-    	LinkedBlockingQueue<Message> leftChildBroker = brokerManager.left;
-    	try{
-    		outstream.println("Connection Established"); // this will write to the parent
-    		String inputLine = "";
-    		Message nextMsg;
-    		while(true){
-    			
-    			//check connected entity for incoming messages
-    			if(instream.ready()){
-    				inputLine = instream.readLine();
-    				Message testmsg = new Message(inputLine);
-    				leftChildBroker.add(testmsg);
-    			}
-    			
-	
-    			//check for new events or subscription that should be made known to the entity
-    			nextMsg = (Message) leftChildBroker.poll();
-				if(nextMsg != null){
-					//inform the socket connection of the message
-					
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
-				}
-				
-				if(Init.ENABLE_THREAD_SLEEP){
-					try{
-						Thread.sleep(Init.THREAD_SLEEP_INTERVAL); 
-					} catch (InterruptedException e){
-						e.printStackTrace();
-					}
-				}
-				
-    		}
-    	} catch (IOException e) {
-    		System.out.println("Socket was closed from the other side");
-    		e.printStackTrace();
-    	}
-    }
-    
-    
-    
-    
-    protected void manageConectionWithSecondClientChild(){
-    	LinkedBlockingQueue<Message> secondChildQueue = brokerManager.pos1;
-    	try{
-    		outstream.println("Connection Established"); // this will write to the parent
-    		String inputLine = "";
-    		Message nextMsg;
-    		while(true){
-    			
-    			//check connected entity for incoming messages
-    			if(instream.ready()){
-    				inputLine = instream.readLine();
-    				Message testmsg = new Message(inputLine);
-    				secondChildQueue.add(testmsg);
-    			}
-    			
-	
-    			//check for new events or subscription that should be made known to the entity
-    			nextMsg = (Message) secondChildQueue.poll();
-				if(nextMsg != null){
-					//inform the socket connection of the message
-					
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
-				}
-				
-				if(Init.ENABLE_THREAD_SLEEP){
-					try{
-						Thread.sleep(Init.THREAD_SLEEP_INTERVAL); 
-					} catch (InterruptedException e){
-						e.printStackTrace();
-					}
-				}
-				
-    		}
-    	} catch (IOException e) {
-    		System.out.println("Socket was closed from the other side");
-    		e.printStackTrace();
-    	}
-    }
-    
-    
-    
-    
-    protected void manageConectionWithFirstClientChild(){
-    	LinkedBlockingQueue<Message> firstChildQueue = brokerManager.pos0;
-    	try{
-    		outstream.println("Connection Established"); // this will write to the parent
-    		String inputLine = "";
-    		Message nextMsg;
-    		while(true){
-    			
-    			//check connected entity for incoming messages
-    			if(instream.ready()){
-    				inputLine = instream.readLine();
-    				Message testmsg = new Message(inputLine);
-    				firstChildQueue.add(testmsg);
-    			}
-    			
-	
-    			//check for new events or subscription that should be made known to the entity
-    			nextMsg = (Message) firstChildQueue.poll();
-				if(nextMsg != null){
-					//inform the socket connection of the message
-					
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
-				}
-				
-				if(Init.ENABLE_THREAD_SLEEP){
-					try{
-						Thread.sleep(Init.THREAD_SLEEP_INTERVAL); 
-					} catch (InterruptedException e){
-						e.printStackTrace();
-					}
-				}
-				
-    		}
-    	} catch (IOException e) {
-    		System.out.println("Socket was closed from the other side");
-    		e.printStackTrace();
-    	}
-    }
-    
-    
-    
-    
-    protected void manageConectionWithParent(){
-    	LinkedBlockingQueue<Message> parentQueue = brokerManager.parent;
-    	try{
-    		outstream.println("Connection Established"); // this will write to the parent
-    		String inputLine = "";
-    		Message nextMsg;
-    		while(true){
-    			
-    			//check connected entity for incoming messages
-    			if(instream.ready()){
-    				inputLine = instream.readLine();
-    				Message testmsg = new Message(inputLine);
-    				parentQueue.add(testmsg);
-    			}
-    			
-	
-    			//check for new events or subscription that should be made known to the entity
-    			nextMsg = (Message) parentQueue.poll();
-				if(nextMsg != null){
-					//inform the socket connection of the message
-					
-					//demo code, in the future this should be a serialized object
-					outstream.println(nextMsg.debugString);		
-				}
-				
-				if(Init.ENABLE_THREAD_SLEEP){
-					try{
-						Thread.sleep(Init.THREAD_SLEEP_INTERVAL); 
-					} catch (InterruptedException e){
-						e.printStackTrace();
-					}
-				}
-				
-    		}
-    	} catch (IOException e) {
-    		System.out.println("Socket was closed from the other side");
-    		e.printStackTrace();
-    	}
-    }
-    
+
+			}
+		} catch (IOException e) {
+			System.out.println("Socket was closed from the other side");
+			e.printStackTrace();
+		}
+	}
+
 }

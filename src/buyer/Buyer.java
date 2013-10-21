@@ -1,30 +1,45 @@
 package buyer;
-import java.io.*;
+import includes.UUIDGenerator;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import entities.Message;
-import events.*;
+import events.Bid;
+import events.InterestBidUpdate;
+import events.SaleItem;
  
 public class Buyer {
-	public String UUID;
-	public LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
-	public LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
+	private String uuid;
+	private LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
+	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
+	private BuyerIOThread communicationThread;
+	private ArrayList<SaleItem> publishedInterests;
 	
     public static void main(String[] args) throws IOException {
     	Buyer buyer = new Buyer();
-    	new BuyerIOThread(buyer.incoming, buyer.outgoing).start();
-		buyer.SendNotice();
+    	buyer.publishInterest("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
         while(true){
 			try{
 				Thread.sleep(3000);
-				buyer.PrintNotices();
+				buyer.printNotices();
 			} catch (InterruptedException e){
 				e.printStackTrace();
 			}
         }
     }
     
-    public void PrintNotices(){
+    public Buyer(){
+    	this.setUUID(UUIDGenerator.getNextUUID());
+    	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing);
+    	this.communicationThread.start();
+    	this.publishedInterests = new ArrayList<SaleItem>();
+    }
+    
+    
+    
+    public void printNotices(){
     	Message nextMsg;
     	nextMsg = (Message) this.incoming.poll();
 		if(nextMsg != null){
@@ -33,49 +48,41 @@ public class Buyer {
     	
     }
     
-    public void SendNotice(){
-    	Message nextMsg = new Message("hey I'm a buyer wanting to tell the brokers something");
-    	this.outgoing.add(nextMsg);
-    }
-    
-    
-    //To-Do adapt SaleItem to fit this style, and reformat this method
-    public void SubscribeSaleItem(String baseString,String modifierString,long timeStamp,double costLowerBound, double costUpperBound){
-    	//SaleItem saleItem = new SaleItem(baseString,modifierString,timeStamp,costLowerBound,costUpperBound);
-    	//saleItem.isPublish = false;
-    	//Message saleNotice = new Message(this.UUID,saleItem);
-    	//this.outgoing.add(saleNotice);
-    }
-    
-    /*
-    
-    public void PublishBid(String itemUUID, double bidValue){
-    	Bid bid = new Bid(itemUUID, bidValue);
-    	bid.isPublish = true;
-    	Message bidMsg = new Message(this.UUID,bid);
-    	this.outgoing.add(bidMsg);
-    }
-    
-    public void SubscribeBid(String itemUUID){
-    	Bid bid = new Bid(itemUUID, 0.00);
-    	bid.isPublish = false;
-    	Message bidMsg = new Message(this.UUID,bid);
-    	this.outgoing.add(bidMsg);
-    }
-    
-    public void SubscribeBidUpdate(int itemId){
-    	BidUpdate bidUpdate = new BidUpdate(itemId, 0.00);
-    	bidUpdate.isPublish = false;
-    	Message bidUpdateMsg = new Message(this.UUID,bidUpdate);
-    	this.outgoing.add(bidUpdateMsg);
-    }
-    
-    public void SubscribeSaleNotice(int itemId){
-    	SaleNotice saleNotice = new SaleNotice(itemId, 0, 0.00);
-    	saleNotice.isPublish = false;
-    	Message saleNoticeMsg = new Message(this.UUID,saleNotice);
-    	this.outgoing.add(saleNoticeMsg);
-    }
 
-	*/
+	public String getUUID() {
+		return uuid;
+	}
+
+	public void setUUID(String uUID) {
+		uuid = uUID;
+	}
+	
+	//publish bid,interest,interest bid update
+	
+	public void publishBid(String itemUUID,double bidValue){
+		Bid bid = new Bid(this.uuid,itemUUID,bidValue);
+		//the item UUID has been put just as a dummy variable as we are not really caching bids. Incase we decide 
+		// to cache bids in the future, bids will have their own UUIDs.
+		Message message  = new Message("Bid from a buyer",bid,bid.getItemUUID());
+		this.outgoing.add(message);
+	}
+	
+	public void publishInterest(String baseString,String modifierString,long timeStamp,double minimumCost,double maximumCost){
+		//need to be cached in the interest database
+		SaleItem interest = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
+		interest.setInterest(true);
+		this.publishedInterests.add(interest);
+		Message message  = new Message("Interest request from a buyer",interest,interest.getUuid());
+		this.outgoing.add(message);
+	}
+	
+	public void interestBidUpdate(String itemUUID){
+		//these need to be cached on the broker the buyer is connected to, just check before forwarding to the buyer, incase
+		// a bid comes along.
+		InterestBidUpdate interest = new InterestBidUpdate(this.uuid,itemUUID);
+		Message message  = new Message("Interest bid update from buyer",interest,interest.getRequestUUID());
+		this.outgoing.add(message);
+	}
+    
+    
 }

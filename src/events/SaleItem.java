@@ -26,8 +26,8 @@ import entities.Event;
 public class SaleItem extends Event{
 	public static final String MODIFIER_STRING_IGNORE = "$";
 	public static final long TIME_STAMP_IGNORE = -1;
-	private static final double COST_LOWER_BOUND_IGNORE = Double.MIN_VALUE;
-	private static final double COST_UPPER_BOUND_IGNORE = Double.MAX_VALUE; 
+	public static final double COST_LOWER_BOUND_IGNORE = Double.MIN_VALUE;
+	public static final double COST_UPPER_BOUND_IGNORE = Double.MAX_VALUE; 
 	
 	private final String baseString;
 	private final String modifierString;
@@ -35,6 +35,7 @@ public class SaleItem extends Event{
 	private final double costLowerBound;
 	private final double costUpperBound;
 	private final String uuid;
+	private final String userUUID;
 	private boolean isInterest; //if this is false, it means its an available item
 	
 	public static void main(String[] args){
@@ -68,7 +69,7 @@ public class SaleItem extends Event{
 		*/
 	}
 	
-	public SaleItem(String baseString,String modifierString,long timeStamp,double costLowerBound, double costUpperBound){
+	public SaleItem(String baseString,String modifierString,long timeStamp,double costLowerBound, double costUpperBound,String userUUID){
 		this.baseString = baseString.toLowerCase();
 		this.modifierString = modifierString.toLowerCase();
 		this.timeStamp = timeStamp;
@@ -76,6 +77,7 @@ public class SaleItem extends Event{
 		this.costUpperBound = costUpperBound;
 		this.uuid = UUIDGenerator.getNextUUID();
 		this.eventType = EventType.saleitem;
+		this.userUUID = userUUID;
 	}
 	
 	public String getBaseString() {
@@ -214,6 +216,10 @@ public class SaleItem extends Event{
 	public static SaleItem getObjectFromJson(String json){
 		Gson gson = Init.gsonConverter;
 		return gson.fromJson(json, SaleItem.class);
+	}
+
+	public String getUserUUID() {
+		return userUUID;
 	}
 
 }

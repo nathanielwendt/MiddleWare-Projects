@@ -17,7 +17,7 @@ public class MasterBroker {
         try {
             serverSocket = new ServerSocket(Init.MASTERPORT);
             if(Init.VERBOSE) {
-            	System.out.println("Started master broker and listening on -> " + Init.MASTERPORT);
+            	System.out.println("Started master broker and listening on port number " + Init.MASTERPORT);
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port: " + Init.MASTERPORT);
