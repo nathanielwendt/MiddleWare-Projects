@@ -1,5 +1,6 @@
 package seller;
 
+import gui.SellerGUI;
 import includes.EventType;
 
 import java.io.BufferedReader;
@@ -28,19 +29,20 @@ public class SellerIOThread extends Thread {
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
 	private Seller sellerInstance;
+	private SellerGUI guiInstance; //check for not null before using it.
 
 	private ArrayList<Bid> bidsReceived;
-	//private ArrayList<SaleItem> publishedAvailableItems;
 	private HashMap<String,SaleItem> publishedAvailableItems; //changed to hashmap for easy lookup
 	private HashMap<String,Bid> bidLeaders; //maintains information about current highest bidders for each saleItem, String is UUID
 
-	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
+	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing,SellerGUI guiInstance){
 		this.incoming = incoming;
 		this.outgoing = outgoing;
 		this.setBidsReceived(new ArrayList<Bid>());
 		this.setBidLeaders(new HashMap<String,Bid>());
 		this.setPublishedAvailableItems(new HashMap<String,SaleItem>());
 		this.sellerInstance = sellerInstance;
+		this.guiInstance = guiInstance;
 	}
 
 	public void run() {   
@@ -96,12 +98,15 @@ public class SellerIOThread extends Thread {
 							}
 							if(receivedMessage.getEventType() == EventType.bid){
 								Bid receivedBid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
-								//this.bidsReceived.add(receivedBid);
+								this.bidsReceived.add(receivedBid);
+								if(guiInstance != null){
+									guiInstance.updateTableDataAccordingToBid(receivedBid); //update the GUI accordingly
+								}
+
 								if(Init.VERBOSE) {
 									System.out.println("The message has been identified to be a bid from a buyer.");
-									System.out.println("The bid is -> " + receivedBid.toJson());
+									//System.out.println("The bid is -> " + receivedBid.toJson());
 								}
-								
 								if(receivedBid.isAutoMinBid()){ //setBidValue automatically checks this, added for readability
 									Bid currentBidLeader = this.bidLeaders.get(receivedBid.getItemUUID());
 									SaleItem biddingItem = this.publishedAvailableItems.get(receivedBid.getItemUUID());  //look up the associated published available item
@@ -122,6 +127,7 @@ public class SellerIOThread extends Thread {
 										System.out.println("The bid update for the received bid has been published.");
 									}
 								}
+
 							}else{
 								System.err.println("Seller just received an unsupported message.Message -> " + receivedMessage.toJson());
 							}

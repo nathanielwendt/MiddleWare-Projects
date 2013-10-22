@@ -1,6 +1,6 @@
 import java.util.Random;
 
-import edu.uta.middleware.guitools.MessageConsole;
+import gui.MessageConsole;
 
 
 public class GUITesterClass{
