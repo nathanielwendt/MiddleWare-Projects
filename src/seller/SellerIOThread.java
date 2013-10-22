@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
+import edu.uta.middleware.guitools.SellerGUI;
 import entities.Message;
 import events.Bid;
 import events.BidUpdate;
@@ -26,16 +27,18 @@ public class SellerIOThread extends Thread {
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
 	private Seller sellerInstance;
+	private SellerGUI guiInstance; //check for not null before using it.
 
 	private ArrayList<Bid> bidsReceived;
 	private ArrayList<SaleItem> publishedAvailableItems;
 
-	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
+	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing,SellerGUI guiInstance){
 		this.incoming = incoming;
 		this.outgoing = outgoing;
 		this.setBidsReceived(new ArrayList<Bid>());
 		this.setPublishedAvailableItems(new ArrayList<SaleItem>());
 		this.sellerInstance = sellerInstance;
+		this.guiInstance = guiInstance;
 	}
 
 	public void run() {   
@@ -92,19 +95,34 @@ public class SellerIOThread extends Thread {
 							if(receivedMessage.getEventType() == EventType.bid){
 								Bid receivedBid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
 								this.bidsReceived.add(receivedBid);
+								if(guiInstance != null){
+									guiInstance.updateTableDataAccordingToBid(receivedBid); //update the GUI accordingly
+								}
 								if(Init.VERBOSE) {
 									System.out.println("The message has been identified to be a bid from a buyer.");
 									System.out.println("The bid is -> " + receivedBid.toJson());
 								}
-								
-								//some logic to figure out whether to publish or not needs to go here
-								
-								BidUpdate update = new BidUpdate(receivedBid.getBidderUUID(),receivedBid.getItemUUID(),receivedBid.getBidValue());
-								Message toBePublished = new Message("Bid update for an item",update,update.getItemUUID());
-								this.outgoing.add(toBePublished);
-								if(Init.VERBOSE) {
-									System.out.println("The bid update for the received bid has been published.");
+
+								//some logic to figure out whether to publish
+								boolean publish = true;
+								for(Bid bid : this.bidsReceived){
+									if(bid.getItemUUID().equals(receivedBid.getItemUUID())){
+										if(bid.getBidValue() >= receivedBid.getBidValue()){
+											publish = false;
+											break;
+										}
+									}
 								}
+
+								if(publish){
+									BidUpdate update = new BidUpdate(receivedBid.getBidderUUID(),receivedBid.getItemUUID(),receivedBid.getBidValue());
+									Message toBePublished = new Message("Bid update for an item",update,update.getItemUUID());
+									this.outgoing.add(toBePublished);
+									if(Init.VERBOSE) {
+										System.out.println("The bid update for the received bid has been published.");
+									}
+								}
+
 							}else{
 								System.err.println("Seller just received an unsupported message.Message -> " + receivedMessage.toJson());
 							}
@@ -170,5 +188,5 @@ public class SellerIOThread extends Thread {
 	public void setPublishedAvailableItems(ArrayList<SaleItem> publishedAvailableItems) {
 		this.publishedAvailableItems = publishedAvailableItems;
 	}
-	
+
 }

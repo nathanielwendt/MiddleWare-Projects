@@ -2,13 +2,11 @@ package seller;
 import includes.UUIDGenerator;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import setup.Init;
-
+import edu.uta.middleware.guitools.SellerGUI;
 import entities.Message;
 import events.BidUpdate;
 import events.SaleFinalized;
@@ -19,11 +17,12 @@ public class Seller {
 	private LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
 	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	private SellerIOThread communicationThread;
-	
+	private SellerGUI guiInstance;
 	
     public static void main(String[] args) throws IOException {
  
-    	Seller seller = new Seller();
+    	Seller seller = new Seller(null);
+    	/*
     	Scanner scan = new Scanner(System.in);
     	while(true){
 			System.out.println("Enter choice :");
@@ -34,12 +33,14 @@ public class Seller {
 		    	seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
 			}
         }
+        */
     }
     
-    public Seller(){
+    public Seller(SellerGUI guiInstance){
     	this.setUuid(UUIDGenerator.getNextUUID());
-    	this.communicationThread = new SellerIOThread(this,this.incoming, this.outgoing);
+    	this.communicationThread = new SellerIOThread(this,this.incoming, this.outgoing,guiInstance);
     	this.communicationThread.start();
+    	this.guiInstance = guiInstance;
     }
     
     public void printNotices(){
@@ -72,6 +73,9 @@ public class Seller {
 		SaleItem item = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
 		item.setInterest(false);
 		this.communicationThread.getPublishedAvailableItems().add(item);
+		if(guiInstance != null){
+			guiInstance.addItemToTable(item);
+		}
 		Message message  = new Message("Available item from a seller",item,item.getUuid());
 		this.outgoing.add(message);
 	}
