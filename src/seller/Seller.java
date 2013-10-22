@@ -32,6 +32,8 @@ public class Seller {
 				Calendar c = Calendar.getInstance();
 		    	c.set(Calendar.YEAR, 2009);
 		    	seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
+			} else if(input.toLowerCase().equals("saleFinal")){
+				//seller.publishSaleFinalized(seller.getCommunicationThread().getPublishedAvailableItems.entryset().iterator().next(),1000);
 			}
         }
     }
@@ -71,7 +73,7 @@ public class Seller {
 		//need to be looked up on the interest database and cached everywhere in a hashmap
 		SaleItem item = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
 		item.setInterest(false);
-		this.communicationThread.getPublishedAvailableItems().add(item);
+		this.communicationThread.getPublishedAvailableItems().put(item.getUuid(),item);
 		Message message  = new Message("Available item from a seller",item,item.getUuid());
 		this.outgoing.add(message);
 	}

@@ -29,20 +29,24 @@ public class Buyer {
 				buyer.publishInterest("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
 			}else if(input.toLowerCase().equals("bidupdateinterest")){
 				buyer.interestBidUpdate(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid());
-			}else if(input.toLowerCase().equals("bid")){
+			}else if(input.toLowerCase().equals("bidauto1000")){
+				buyer.publishAutoBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
+			}else if(input.toLowerCase().equals("bid1")){
+				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1);
+			}else if(input.toLowerCase().equals("bid1000")){
 				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
+			} else if(input.toLowerCase().equals("bid1001")){
+				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1001);
 			}
         }
     }
     
     public Buyer(){
     	this.setUUID(UUIDGenerator.getNextUUID());
-    	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing);
+    	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing, this);
     	this.communicationThread.start();
     }
-    
-    
-    
+
     public void printNotices(){
     	Message nextMsg;
     	nextMsg = (Message) this.incoming.poll();
@@ -66,6 +70,11 @@ public class Buyer {
 	}
 	
 	//publish bid,interest,interest bid update
+	
+	public void publishAutoBid(String itemUUID,double bidValue){
+		this.getCommunicationThread().setAutoBid(itemUUID,bidValue);
+		this.publishBid(itemUUID, bidValue);
+	}
 	
 	public void publishBid(String itemUUID,double bidValue){
 		Bid bid = new Bid(this.uuid,itemUUID,bidValue);

@@ -131,8 +131,9 @@ public class BrokerLinkThread extends Thread {
 		else if(nextLinkName == LinkName.parent){
 			manageConection(brokerManager.parent,BrokerManager.PARENT);
 		}
+		else
+			System.out.println("COULD NOT RESOLVE LISTENING");
 	}
-
 
 
 	protected void manageConection(LinkedBlockingQueue<Message> firstChildQueue, int dataSource){
@@ -165,106 +166,15 @@ public class BrokerLinkThread extends Thread {
 					}else{
 						Message receivedMessage = Message.getObjectFromJson(inputLine);
 						if(receivedMessage.getEventType() == EventType.saleitem){
-							SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
-							if(item.isInterest()){ //coming from a buyer or a child
-								this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
-								this.brokerManager.getInterestsDB().addItemToDataBase(item);
-								receivedMessage.setMessageSourceValue(dataSource, true);
-								this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
-								receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
-								if(Init.VERBOSE) {
-									System.out.println("It has been identified as an interest and propagated to the parent.");
-								}
-							}else{ //coming from a seller or a child, needs to be matched and propagated
-								this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
-								this.brokerManager.getAvailableItemDatabase().put(receivedMessage.getUuid(), item);
-								receivedMessage.setMessageSourceValue(dataSource, true);
-								this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
-								receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
-								if(Init.VERBOSE) {
-									System.out.println("It has been identified as an available item.");
-								}
-								ArrayList<SaleItem> matches = this.brokerManager.getInterestsDB().getSearchResult(item);
-								if(Init.VERBOSE) {
-									System.out.println("There are " + matches.size() + " interest matches to the available item in the database.");
-								}
-								for(SaleItem s : matches){
-									boolean[] propagateValues = this.brokerManager.getMessageSource().get(s.getUuid());
-									for(int i=0;i<propagateValues.length;i++){
-										if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
-											this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
-										}
-									}
-								}
-								if(Init.VERBOSE) {
-									System.out.println("The matches have been notified appropriately.");
-								}
-							}
+							this.ManageSaleItem(receivedMessage, dataSource);
 						}else if(receivedMessage.getEventType() == EventType.interestbidupdate){ //coming from a buyer
-							InterestBidUpdate interest = InterestBidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
-							this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
-							this.brokerManager.getInterestBidUpdates().put(receivedMessage.getUuid(), interest);
-							receivedMessage.setMessageSourceValue(dataSource, true);
-							//since we will be having a lot of interests on the same item, we need to update the source information, rather than adding new info everytime
-							boolean[] existingSourceInfo = this.brokerManager.getBidUpdateSource().get(interest.getItemUUID());
-							boolean[] arrayToBeStored = receivedMessage.getMessageSourceArray().clone();
-							if(existingSourceInfo != null){
-								arrayToBeStored = combineBooleanArrays(receivedMessage.getMessageSourceArray().clone(),existingSourceInfo);
-							}
-							this.brokerManager.getBidUpdateSource().put(receivedMessage.getUuid(), arrayToBeStored);
-							receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
-							if(Init.VERBOSE) {
-								System.out.println("It has been identified as an interest bid update and propagated to the parent.");
-							}
+							this.ManageInterestBidUpdate(receivedMessage, dataSource);
 						}else if(receivedMessage.getEventType() == EventType.bid){ //look up available item data and send to that seller as a bid
-							Bid bid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
-							this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the right seller
-							receivedMessage.setMessageSourceValue(dataSource, true);
-							//since we will be having a lot of bids, we need to update the source information, rather than adding new info everytime
-							boolean[] existingSourceInfo = this.brokerManager.getMessageSourceClient().get(bid.getItemUUID());
-							boolean[] arrayToBeStored = receivedMessage.getMessageSourceArray().clone();
-							if(existingSourceInfo != null){
-								arrayToBeStored = combineBooleanArrays(receivedMessage.getMessageSourceArray().clone(),existingSourceInfo);
-							}
-							// make sure the message is put in a different hashmap as the key matches with 
-							this.brokerManager.getMessageSourceClient().put(bid.getItemUUID(), arrayToBeStored);
-							receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
-							//send to the respective seller
-							boolean[] propagateValues = this.brokerManager.getMessageSource().get(bid.getItemUUID());
-							for(int i=0;i<propagateValues.length;i++){
-								if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
-									this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
-								}
-							}
-							if(Init.VERBOSE) {
-								System.out.println("It has been identified as a bid and propagated to the parent to be sent to the seller.");
-							}
+							this.ManageBid(receivedMessage, dataSource);
 						}else if(receivedMessage.getEventType() == EventType.bidUpdate){
-							BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
-							this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the interested buyers
-							//send to the interested buyers
-							boolean[] propagateValues = this.brokerManager.getBidUpdateSource().get(update.getItemUUID());
-							for(int i=0;i<propagateValues.length;i++){
-								if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
-									this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
-								}
-							}
-							if(Init.VERBOSE) {
-								System.out.println("It has been identified as a bid update and propagated to the parent to be sent to the interested buyers.");
-							}
+							this.ManageBidUpdate(receivedMessage, dataSource);
 						}else if(receivedMessage.getEventType() == EventType.saleNotice){
-							SaleFinalized sale = SaleFinalized.getObjectFromJson(receivedMessage.getEventAsJson());
-							this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the buyers
-							//send to the interested buyers
-							boolean[] propagateValues = this.brokerManager.getMessageSourceClient().get(sale.getItemUUID());
-							for(int i=0;i<propagateValues.length;i++){
-								if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
-									this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
-								}
-							}
-							if(Init.VERBOSE) {
-								System.out.println("It has been identified as a sale finalized notice and sent to all the users who bid on the item.");
-							}
+							this.ManageSaleNotice(receivedMessage, dataSource);
 						}else{
 							if(Init.VERBOSE) {
 								System.err.println("Message type not identified.");
@@ -291,6 +201,120 @@ public class BrokerLinkThread extends Thread {
 		} catch (IOException e) {
 			System.out.println("Socket was closed from the other side");
 			e.printStackTrace();
+		}
+	}
+	
+	protected void ManageSaleItem(Message receivedMessage, int dataSource){
+		SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
+		if(item.isInterest()){ //coming from a buyer or a child
+			this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+			this.brokerManager.getInterestsDB().addItemToDataBase(item);
+			receivedMessage.setMessageSourceValue(dataSource, true);
+			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
+			receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+			if(Init.VERBOSE) {
+				System.out.println("It has been identified as an interest and propagated to the parent.");
+			}
+		}else{ //coming from a seller or a child, needs to be matched and propagated
+			this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
+			this.brokerManager.getAvailableItemDatabase().put(receivedMessage.getUuid(), item);
+			receivedMessage.setMessageSourceValue(dataSource, true);
+			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
+			receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+			if(Init.VERBOSE) {
+				System.out.println("It has been identified as an available item.");
+			}
+			ArrayList<SaleItem> matches = this.brokerManager.getInterestsDB().getSearchResult(item);
+			if(Init.VERBOSE) {
+				System.out.println("There are " + matches.size() + " interest matches to the available item in the database.");
+			}
+			for(SaleItem s : matches){
+				boolean[] propagateValues = this.brokerManager.getMessageSource().get(s.getUuid());
+				for(int i=0;i<propagateValues.length;i++){
+					if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
+						this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
+					}
+				}
+			}
+			if(Init.VERBOSE) {
+				System.out.println("The matches have been notified appropriately.");
+			}
+		}
+	}
+	
+	protected void ManageInterestBidUpdate(Message receivedMessage, int dataSource){
+		InterestBidUpdate interest = InterestBidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
+		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+		this.brokerManager.getInterestBidUpdates().put(receivedMessage.getUuid(), interest);
+		receivedMessage.setMessageSourceValue(dataSource, true);
+		//since we will be having a lot of interests on the same item, we need to update the source information, rather than adding new info everytime
+		boolean[] existingSourceInfo = this.brokerManager.getBidUpdateSource().get(interest.getItemUUID());
+		boolean[] arrayToBeStored = receivedMessage.getMessageSourceArray().clone();
+		if(existingSourceInfo != null){
+			arrayToBeStored = combineBooleanArrays(receivedMessage.getMessageSourceArray().clone(),existingSourceInfo);
+		}
+		this.brokerManager.getBidUpdateSource().put(receivedMessage.getUuid(), arrayToBeStored);
+		receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+		if(Init.VERBOSE) {
+			System.out.println("It has been identified as an interest bid update and propagated to the parent.");
+		}
+	}
+	
+	protected void ManageBid(Message receivedMessage, int dataSource){
+		Bid bid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
+		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the right seller
+		receivedMessage.setMessageSourceValue(dataSource, true);
+		//since we will be having a lot of bids, we need to update the source information, rather than adding new info everytime
+		boolean[] existingSourceInfo = this.brokerManager.getMessageSourceClient().get(bid.getItemUUID());
+		boolean[] arrayToBeStored = receivedMessage.getMessageSourceArray().clone();
+		if(existingSourceInfo != null){
+			arrayToBeStored = combineBooleanArrays(receivedMessage.getMessageSourceArray().clone(),existingSourceInfo);
+		}
+		// make sure the message is put in a different hashmap as the key matches with 
+		this.brokerManager.getMessageSourceClient().put(bid.getItemUUID(), arrayToBeStored);
+		receivedMessage.setMessageSourceValue(dataSource, false); //revert the changes to make sure messages on outbox are not affected
+		//send to the respective seller
+		boolean[] propagateValues = this.brokerManager.getMessageSource().get(bid.getItemUUID());
+		for(int i=0;i<propagateValues.length;i++){
+			if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
+				this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
+				System.out.println("source found");
+			}
+		}
+		if(Init.VERBOSE) {
+			System.out.println("It has been identified as a bid and propagated to the parent to be sent to the seller.");
+		}
+	}
+	
+	protected void ManageBidUpdate(Message receivedMessage, int dataSource){
+		BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
+		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the interested buyers
+		//send to the interested buyers
+		boolean[] propagateValues = this.brokerManager.getBidUpdateSource().get(update.getItemUUID());
+		if(propagateValues != null){ //will be null if the bidder is the first bidder (has not subscribed to bid updates yet)
+			for(int i=0;i<propagateValues.length;i++){
+				if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
+					this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
+				}
+			}
+			if(Init.VERBOSE) {
+				System.out.println("It has been identified as a bid update and propagated to the parent to be sent to the interested buyers.");
+			}
+		}
+	}
+	
+	protected void ManageSaleNotice(Message receivedMessage, int dataSource){
+		SaleFinalized sale = SaleFinalized.getObjectFromJson(receivedMessage.getEventAsJson());
+		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the buyers
+		//send to the interested buyers
+		boolean[] propagateValues = this.brokerManager.getMessageSourceClient().get(sale.getItemUUID());
+		for(int i=0;i<propagateValues.length;i++){
+			if(propagateValues[i] && (i != dataSource)){ //send to all interested nodes and avoid duplicates
+				this.brokerManager.getQueueAccordingToSource(i).add(receivedMessage);
+			}
+		}
+		if(Init.VERBOSE) {
+			System.out.println("It has been identified as a sale finalized notice and sent to all the users who bid on the item.");
 		}
 	}
 
