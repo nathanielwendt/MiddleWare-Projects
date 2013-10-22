@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
@@ -30,13 +32,15 @@ public class SellerIOThread extends Thread {
 	private SellerGUI guiInstance; //check for not null before using it.
 
 	private ArrayList<Bid> bidsReceived;
-	private ArrayList<SaleItem> publishedAvailableItems;
+	private HashMap<String,SaleItem> publishedAvailableItems; //changed to hashmap for easy lookup
+	private HashMap<String,Bid> bidLeaders; //maintains information about current highest bidders for each saleItem, String is UUID
 
 	public SellerIOThread(Seller sellerInstance,LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing,SellerGUI guiInstance){
 		this.incoming = incoming;
 		this.outgoing = outgoing;
 		this.setBidsReceived(new ArrayList<Bid>());
-		this.setPublishedAvailableItems(new ArrayList<SaleItem>());
+		this.setBidLeaders(new HashMap<String,Bid>());
+		this.setPublishedAvailableItems(new HashMap<String,SaleItem>());
 		this.sellerInstance = sellerInstance;
 		this.guiInstance = guiInstance;
 	}
@@ -98,23 +102,14 @@ public class SellerIOThread extends Thread {
 								if(guiInstance != null){
 									guiInstance.updateTableDataAccordingToBid(receivedBid); //update the GUI accordingly
 								}
+
 								if(Init.VERBOSE) {
 									System.out.println("The message has been identified to be a bid from a buyer.");
-									System.out.println("The bid is -> " + receivedBid.toJson());
+									//System.out.println("The bid is -> " + receivedBid.toJson());
 								}
 
-								//some logic to figure out whether to publish
-								boolean publish = true;
-								for(Bid bid : this.bidsReceived){
-									if(bid.getItemUUID().equals(receivedBid.getItemUUID())){
-										if(bid.getBidValue() >= receivedBid.getBidValue()){
-											publish = false;
-											break;
-										}
-									}
-								}
-
-								if(publish){
+								boolean isMaxBid = this.updateMaxBid(receivedBid);
+								if(isMaxBid){
 									BidUpdate update = new BidUpdate(receivedBid.getBidderUUID(),receivedBid.getItemUUID(),receivedBid.getBidValue());
 									Message toBePublished = new Message("Bid update for an item",update,update.getItemUUID());
 									this.outgoing.add(toBePublished);
@@ -181,12 +176,38 @@ public class SellerIOThread extends Thread {
 		this.bidsReceived = bidsReceived;
 	}
 
-	public ArrayList<SaleItem> getPublishedAvailableItems() {
+	//changed to hashmap
+	public HashMap<String,SaleItem> getPublishedAvailableItems() {
 		return publishedAvailableItems;
 	}
 
-	public void setPublishedAvailableItems(ArrayList<SaleItem> publishedAvailableItems) {
+	//changed to hashmap
+	public void setPublishedAvailableItems(HashMap<String,SaleItem> publishedAvailableItems) {
 		this.publishedAvailableItems = publishedAvailableItems;
 	}
-
+	
+	public void setBidLeaders(HashMap<String,Bid> bidLeaders){
+		this.bidLeaders = bidLeaders;
+	}
+	
+	//returns true if bid is updated
+	public boolean updateMaxBid(Bid receivedBid){
+		Bid currentBidLeader = this.bidLeaders.get(receivedBid.getItemUUID()); //look up in the hashmap the associated bid
+		SaleItem biddingItem = this.publishedAvailableItems.get(receivedBid.getItemUUID());  //look up the associated published available item
+		boolean bidIsAboveMinimum = (biddingItem.getCostLowerBound() < receivedBid.getBidValue());
+		if(currentBidLeader == null){ //first bid on item
+			if(bidIsAboveMinimum){
+				this.bidLeaders.put(receivedBid.getItemUUID(), receivedBid);
+				return true;
+			} else {
+				return false;
+			}
+		} else if(currentBidLeader.getBidValue() < receivedBid.getBidValue()){
+			this.bidLeaders.put(receivedBid.getItemUUID(), receivedBid);
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 }

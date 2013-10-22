@@ -1,0 +1,29 @@
+//redundant notifications will happen if a buyer has several interests that overlap.  GUI should remove the redundancy
+
+
+Errors - Fixes:
+//Error: When publishing a bid, the broker would throw an error from the seller publishing the first bidupdate since noone was registered
+//to receive updates on it.  
+//Fixed: I added a if statement that checks for null values before getting the length of the resulting array (avoid NUllPointerExecption)
+
+//Added: Extra functionality to only send bid updates when necessary
+//first bid will check against items minimum price to see if it should set it's new bid leader
+//any subsequent bids will see if they are higher than the current max bid
+
+Testing:
+
+Completed Successfully:
+//Generate interest, item, and bid between a buyer and a seller on 1 broker
+//Generate interest, item, and a bid from a buyer not sharing a broker with the seller
+//Generate interest, item, and bidding war between buyers on different brokers with a seller on the master broker
+
+//A first time bid that does not meet the minimum bid value for an item is ignored
+//Subsequent bids that are higher than the current highest bidder will generate a bid update
+
+//BidUpdate seems to be functioning correctly
+
+
+
+To-Do:
+//Add functionality for SaleFinalized
+//Add functionality for Buyer auto bid

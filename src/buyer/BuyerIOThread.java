@@ -9,15 +9,18 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
 import entities.Message;
+import events.Bid;
 import events.BidUpdate;
 import events.SaleFinalized;
 import events.SaleItem;
 
 public class BuyerIOThread extends Thread {
+	private Buyer callingBuyer = null;
 	private Socket socket = null;
 	private PrintWriter outstream = null;
 	private BufferedReader instream = null;
@@ -26,14 +29,15 @@ public class BuyerIOThread extends Thread {
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
 	
-	
+	private HashMap<String,Double> autoBids; //String UUID matching highest value to auto bid
 	private ArrayList<SaleItem> matchingItems;
 	private ArrayList<SaleItem> publishedInterests;
 	private ArrayList<BidUpdate> updatesReceived;
 	private ArrayList<SaleFinalized> finalizedSales;
 
 
-	public BuyerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing){
+	public BuyerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing, Buyer callingBuyer){
+		this.callingBuyer = callingBuyer;
 		this.incoming = incoming;
 		this.outgoing = outgoing;
 		this.matchingItems = new ArrayList<SaleItem>();
@@ -108,6 +112,13 @@ public class BuyerIOThread extends Thread {
 							}else if(receivedMessage.getEventType() == EventType.bidUpdate){
 								BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
 								this.updatesReceived.add(update);
+								
+								//check if the bid needs to automatically update itself
+								Double dub = this.autoBids.get(update.getItemUUID());
+								if(dub != null){
+									this.callingBuyer.publishBid(update.getItemUUID(), dub.doubleValue());
+								}
+								
 								if(Init.VERBOSE) {
 									System.out.println("The message has been identified to be a bid update.");
 									System.out.println("The update is -> " + update.toJson());
@@ -197,5 +208,10 @@ public class BuyerIOThread extends Thread {
 
 	public void setFinalizedSales(ArrayList<SaleFinalized> finalizedSales) {
 		this.finalizedSales = finalizedSales;
+	}
+	
+	public void setAutoBid(String itemID, double bidValue){
+		Double dub = new Double(bidValue);
+		this.autoBids.put(itemID, dub);
 	}
 }
