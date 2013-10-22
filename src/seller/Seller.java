@@ -1,4 +1,5 @@
 package seller;
+import gui.SellerGUI;
 import includes.UUIDGenerator;
 
 import java.io.IOException;
@@ -6,7 +7,6 @@ import java.util.Calendar;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.uta.middleware.guitools.SellerGUI;
 import entities.Message;
 import events.BidUpdate;
 import events.SaleFinalized;
@@ -22,7 +22,6 @@ public class Seller {
     public static void main(String[] args) throws IOException {
  
     	Seller seller = new Seller(null);
-    	/*
     	Scanner scan = new Scanner(System.in);
     	while(true){
 			System.out.println("Enter choice :");
@@ -33,7 +32,6 @@ public class Seller {
 		    	seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
 			}
         }
-        */
     }
     
     public Seller(SellerGUI guiInstance){

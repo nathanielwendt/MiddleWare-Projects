@@ -1,5 +1,6 @@
 package seller;
 
+import gui.SellerGUI;
 import includes.EventType;
 
 import java.io.BufferedReader;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
-import edu.uta.middleware.guitools.SellerGUI;
 import entities.Message;
 import events.Bid;
 import events.BidUpdate;
