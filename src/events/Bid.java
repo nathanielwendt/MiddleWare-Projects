@@ -12,6 +12,7 @@ public class Bid extends Event {
 	private String itemUUID;
 	private double bidValue;
 	private String bidderUUID;
+	private boolean autoMinBid = false; //added for the auto bidding
 	
 	public static void main(String[] args){
 		SaleItem s = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000,"FSdf");
@@ -31,6 +32,23 @@ public class Bid extends Event {
 		this.bidValue = bidValue;
 		this.bidderUUID = bidderUUID;
 		this.isPublish = false;
+	}
+	
+	//seller overrides bid value when it sees that it is a auto min bid and sets the
+	//bid to be the minimum possible bid.  Safety checks to make sure the caller can do this
+	public void setBidValue(double bidValue){
+		if(this.autoMinBid)
+			this.bidValue = bidValue;
+	}
+	
+	//added these for the auto bidding
+	public void setAutoMinBid(){
+		this.autoMinBid = true;
+	}
+	
+	//added these for the auto bidding
+	public boolean isAutoMinBid(){
+		return this.autoMinBid;
 	}
 	
 	public String getItemUUID(){

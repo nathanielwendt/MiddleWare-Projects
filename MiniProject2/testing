@@ -22,7 +22,11 @@ Completed Successfully:
 
 //BidUpdate seems to be functioning correctly
 
+//Bidding War between two bidders works correctly
+//Bidding war between two bidders (with one on autobid) works correctly
 
+Completed Unsuccessfully:
+//Some cases where multi-tier (more than one broker) systems where messages were not propagating to pos0 and pos1.  Broker1 was reconnecting to buyer.
 
 To-Do:
 //Add functionality for SaleFinalized

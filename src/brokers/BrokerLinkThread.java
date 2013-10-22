@@ -165,6 +165,9 @@ public class BrokerLinkThread extends Thread {
 						}
 					}else{
 						Message receivedMessage = Message.getObjectFromJson(inputLine);
+						if(dataSource != BrokerManager.PARENT){
+							this.brokerManager.parent.add(receivedMessage); //propagate to parent only if message didn't already come from parent
+						}
 						if(receivedMessage.getEventType() == EventType.saleitem){
 							this.ManageSaleItem(receivedMessage, dataSource);
 						}else if(receivedMessage.getEventType() == EventType.interestbidupdate){ //coming from a buyer
@@ -207,7 +210,7 @@ public class BrokerLinkThread extends Thread {
 	protected void ManageSaleItem(Message receivedMessage, int dataSource){
 		SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
 		if(item.isInterest()){ //coming from a buyer or a child
-			this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+			//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
 			this.brokerManager.getInterestsDB().addItemToDataBase(item);
 			receivedMessage.setMessageSourceValue(dataSource, true);
 			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
@@ -216,7 +219,7 @@ public class BrokerLinkThread extends Thread {
 				System.out.println("It has been identified as an interest and propagated to the parent.");
 			}
 		}else{ //coming from a seller or a child, needs to be matched and propagated
-			this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
+			//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
 			this.brokerManager.getAvailableItemDatabase().put(receivedMessage.getUuid(), item);
 			receivedMessage.setMessageSourceValue(dataSource, true);
 			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
@@ -244,7 +247,7 @@ public class BrokerLinkThread extends Thread {
 	
 	protected void ManageInterestBidUpdate(Message receivedMessage, int dataSource){
 		InterestBidUpdate interest = InterestBidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
-		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
+		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
 		this.brokerManager.getInterestBidUpdates().put(receivedMessage.getUuid(), interest);
 		receivedMessage.setMessageSourceValue(dataSource, true);
 		//since we will be having a lot of interests on the same item, we need to update the source information, rather than adding new info everytime
@@ -262,7 +265,7 @@ public class BrokerLinkThread extends Thread {
 	
 	protected void ManageBid(Message receivedMessage, int dataSource){
 		Bid bid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
-		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the right seller
+		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the right seller
 		receivedMessage.setMessageSourceValue(dataSource, true);
 		//since we will be having a lot of bids, we need to update the source information, rather than adding new info everytime
 		boolean[] existingSourceInfo = this.brokerManager.getMessageSourceClient().get(bid.getItemUUID());
@@ -288,7 +291,7 @@ public class BrokerLinkThread extends Thread {
 	
 	protected void ManageBidUpdate(Message receivedMessage, int dataSource){
 		BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
-		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the interested buyers
+		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the interested buyers
 		//send to the interested buyers
 		boolean[] propagateValues = this.brokerManager.getBidUpdateSource().get(update.getItemUUID());
 		if(propagateValues != null){ //will be null if the bidder is the first bidder (has not subscribed to bid updates yet)
@@ -305,7 +308,7 @@ public class BrokerLinkThread extends Thread {
 	
 	protected void ManageSaleNotice(Message receivedMessage, int dataSource){
 		SaleFinalized sale = SaleFinalized.getObjectFromJson(receivedMessage.getEventAsJson());
-		this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the buyers
+		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the buyers
 		//send to the interested buyers
 		boolean[] propagateValues = this.brokerManager.getMessageSourceClient().get(sale.getItemUUID());
 		for(int i=0;i<propagateValues.length;i++){

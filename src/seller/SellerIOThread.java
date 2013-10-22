@@ -102,9 +102,18 @@ public class SellerIOThread extends Thread {
 									System.out.println("The bid is -> " + receivedBid.toJson());
 								}
 								
-
+								if(receivedBid.isAutoMinBid()){ //setBidValue automatically checks this, added for readability
+									Bid currentBidLeader = this.bidLeaders.get(receivedBid.getItemUUID());
+									SaleItem biddingItem = this.publishedAvailableItems.get(receivedBid.getItemUUID());  //look up the associated published available item
+									if(currentBidLeader == null){ //first time bid is being placed
+										receivedBid.setBidValue(biddingItem.getCostLowerBound() + .01);
+									}
+									else
+										receivedBid.setBidValue(currentBidLeader.getBidValue() + 0.01); //outbid by a penny
+								}
+									
 								//implemented logic figure out whether to publish or not
-								boolean isMaxBid = this.updateMaxBid(receivedBid);
+								boolean isMaxBid = this.updateMaxBid(receivedBid); //should always return true if it is an auto min bid
 								if(isMaxBid){
 									BidUpdate update = new BidUpdate(receivedBid.getBidderUUID(),receivedBid.getItemUUID(),receivedBid.getBidValue());
 									Message toBePublished = new Message("Bid update for an item",update,update.getItemUUID());

@@ -29,7 +29,7 @@ public class BuyerIOThread extends Thread {
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
 	
-	private HashMap<String,Double> autoBids; //String UUID matching highest value to auto bid
+	private HashMap<String,Double[]> autoBids; //String UUID matching highest value to auto bid
 	private ArrayList<SaleItem> matchingItems;
 	private ArrayList<SaleItem> publishedInterests;
 	private ArrayList<BidUpdate> updatesReceived;
@@ -44,6 +44,7 @@ public class BuyerIOThread extends Thread {
 		this.publishedInterests = new ArrayList<SaleItem>();
 		this.updatesReceived = new ArrayList<BidUpdate>();
 		this.setFinalizedSales(new ArrayList<SaleFinalized>());
+		this.autoBids = new HashMap<String,Double[]>();
 	}
 
 	public void run() {   
@@ -114,14 +115,29 @@ public class BuyerIOThread extends Thread {
 								this.updatesReceived.add(update);
 								
 								//check if the bid needs to automatically update itself
-								Double dub = this.autoBids.get(update.getItemUUID());
-								if(dub != null){
-									this.callingBuyer.publishBid(update.getItemUUID(), dub.doubleValue());
+								Double[] bidPair = this.autoBids.get(update.getItemUUID());
+								double maxBid = 0.0;
+								double maxBidIncr = 0.0;
+								boolean autoBid = false;
+								if(bidPair != null){
+									maxBid = bidPair[0].doubleValue();
+									maxBidIncr = bidPair[1].doubleValue();
+									autoBid = (update.getBidUpdateValue() < maxBid) && (!update.getBidderUUID().equals(callingBuyer.getUUID()));
 								}
-								
-								if(Init.VERBOSE) {
-									System.out.println("The message has been identified to be a bid update.");
-									System.out.println("The update is -> " + update.toJson());
+								if(autoBid){ //automatically bid update
+									double nextBid = update.getBidUpdateValue() + maxBidIncr; //current bid + increment should be the next bid
+									if(nextBid > maxBid) //make sure increment doesn't push bid above max buyer is willing to go
+										nextBid = maxBid;
+									this.callingBuyer.publishBid(update.getItemUUID(), nextBid); //publish auto update bid bid
+									
+									//***may want some gui stuff here to tell the user that the bid was automatically updated
+									
+									
+								} else { //no automatic bid update necessary
+									if(Init.VERBOSE) {
+										System.out.println("The message has been identified to be a bid update.");
+										System.out.println("The update is -> " + update.toJson());
+									}
 								}
 							}else if(receivedMessage.getEventType() == EventType.saleNotice){
 								SaleFinalized finalSale = SaleFinalized.getObjectFromJson(receivedMessage.getEventAsJson());
@@ -210,8 +226,8 @@ public class BuyerIOThread extends Thread {
 		this.finalizedSales = finalizedSales;
 	}
 	
-	public void setAutoBid(String itemID, double bidValue){
-		Double dub = new Double(bidValue);
-		this.autoBids.put(itemID, dub);
+	public void setAutoBid(String itemID, double interval, double bidMax){
+		Double[] bidPair = new Double[]{bidMax,interval};
+		this.autoBids.put(itemID, bidPair);
 	}
 }

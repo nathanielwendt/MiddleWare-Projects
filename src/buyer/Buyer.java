@@ -30,9 +30,11 @@ public class Buyer {
 			}else if(input.toLowerCase().equals("bidupdateinterest")){
 				buyer.interestBidUpdate(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid());
 			}else if(input.toLowerCase().equals("bidauto1000")){
-				buyer.publishAutoBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
+				buyer.publishAutoBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),100,1000);
 			}else if(input.toLowerCase().equals("bid1")){
 				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1);
+			}else if(input.toLowerCase().equals("bid800")){
+					buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),800);
 			}else if(input.toLowerCase().equals("bid1000")){
 				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
 			} else if(input.toLowerCase().equals("bid1001")){
@@ -69,11 +71,15 @@ public class Buyer {
 		uuid = uUID;
 	}
 	
-	//publish bid,interest,interest bid update
-	
-	public void publishAutoBid(String itemUUID,double bidValue){
-		this.getCommunicationThread().setAutoBid(itemUUID,bidValue);
-		this.publishBid(itemUUID, bidValue);
+	public void publishAutoBid(String itemUUID, double increment, double maxValue){
+		this.getCommunicationThread().setAutoBid(itemUUID,increment,maxValue);
+		this.interestBidUpdate(itemUUID); //automatically subscribe to bidupdate events so the auto bidder can work properly
+		
+		//publish bid
+		Bid bid = new Bid(this.uuid,itemUUID,0.0); //0.0 is a dummy value that will be overwritten by the seller since it is an auto min bid
+		bid.setAutoMinBid();
+		Message message  = new Message("Bid from a buyer",bid,bid.getItemUUID());
+		this.outgoing.add(message);
 	}
 	
 	public void publishBid(String itemUUID,double bidValue){
