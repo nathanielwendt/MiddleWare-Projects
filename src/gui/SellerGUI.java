@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 
 import javax.swing.AbstractAction;
@@ -24,6 +23,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 import seller.Seller;
 import setup.Init;
@@ -59,7 +59,7 @@ public class SellerGUI extends JFrame {
 	 */
 	public static void main(String[] args) {
 		if(Init.VERBOSE){
-			MessageConsole.invokeDebugConsole("Seller console");
+			//MessageConsole.invokeDebugConsole("Seller console");
 		}
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -257,11 +257,11 @@ public class SellerGUI extends JFrame {
 	private Action finalizeSaleAction = new AbstractAction(){
 		public void actionPerformed(ActionEvent e){
 			int row = Integer.valueOf(e.getActionCommand());
-			ListTableModel model = (ListTableModel) publishedItemsTable.getModel();
+			DefaultTableModel model = (DefaultTableModel) publishedItemsTable.getModel();
 			SellerGUI.this.sellerInstance.publishSaleFinalized(String.valueOf(model.getValueAt(row,7)), 
 					String.valueOf(model.getValueAt(row,9)), 
 					Double.parseDouble(String.valueOf(model.getValueAt(row,6))));
-			model.removeRows(row);
+			model.removeRow(row);
 			JOptionPane.showMessageDialog(null, "The item has been finalized and all the bidders have been notified about the final bid.", "Finalized",JOptionPane.INFORMATION_MESSAGE);
 		}
 	};
@@ -269,8 +269,7 @@ public class SellerGUI extends JFrame {
 		if (publishedItemsTable == null) {
 			String[] columnNames = {"Item name", "Modifier name", "Purchase Date", "Minimum Price", 
 					"Maximum Price", "Number of bids","Maximum bid", "Maximum bid User", "Finalize Item", "Item uuid"};
-			ListTableModel model = new ListTableModel(Arrays.asList(columnNames));
-			model.setModelEditable(false);
+			DefaultTableModel model = new DefaultTableModel(new String[][]{},columnNames);
 			publishedItemsTable = new JTable(model);
 			ButtonColumn buttonColumn = new ButtonColumn(publishedItemsTable, finalizeSaleAction, 8);
 			buttonColumn.setMnemonic(KeyEvent.VK_ENTER);
@@ -283,14 +282,14 @@ public class SellerGUI extends JFrame {
 		return publishedItemsTable;
 	}
 	public void addItemToTable(SaleItem item){
-		ListTableModel model = (ListTableModel) publishedItemsTable.getModel();
+		DefaultTableModel model = (DefaultTableModel) publishedItemsTable.getModel();
 		String date = new SimpleDateFormat("MM/dd/yy").format(new Date(item.getTimeStamp()));
 		Object[] row = {item.getBaseString(), item.getModifierString(), date,item.getCostLowerBound(),
 				item.getCostUpperBound(),0,0,"","Finalize", item.getUuid()};
 		model.addRow(row);
 	}
 	public void updateTableDataAccordingToBid(Bid bid){
-		ListTableModel model = (ListTableModel) publishedItemsTable.getModel();
+		DefaultTableModel model = (DefaultTableModel) publishedItemsTable.getModel();
 		for(int i=0; i<model.getRowCount(); i++){
 			if(model.getValueAt(i, 9).equals(bid.getItemUUID())){
 				int currentValue = Integer.parseInt(String.valueOf(model.getValueAt(i, 5)));

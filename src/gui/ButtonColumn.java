@@ -41,7 +41,7 @@ public class ButtonColumn extends AbstractCellEditor
 	 *  @param action the Action to be invoked when the button is invoked
 	 *  @param column the column to which the button renderer/editor is added
 	 */
-	public ButtonColumn(JTable table, Action action, int column)
+	public ButtonColumn(final JTable table, final Action action, int column)
 	{
 		this.table = table;
 		this.action = action;
@@ -222,6 +222,7 @@ public class ButtonColumn extends AbstractCellEditor
     }
 
     public void mouseClicked(MouseEvent e) {
+    	/*
     	int row = table.convertRowIndexToModel( table.getSelectedRow() );
 		fireEditingStopped();
 
@@ -232,7 +233,7 @@ public class ButtonColumn extends AbstractCellEditor
 			ActionEvent.ACTION_PERFORMED,
 			"" + row);
 		action.actionPerformed(event);
-		
+		*/
     }
 	public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}

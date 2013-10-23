@@ -1,11 +1,11 @@
 package buyer;
+import gui.BuyerGUI;
 import includes.UUIDGenerator;
 
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import setup.Init;
 import entities.Message;
 import events.Bid;
 import events.InterestBidUpdate;
@@ -16,10 +16,11 @@ public class Buyer {
 	private LinkedBlockingQueue<Message> incoming = new LinkedBlockingQueue<Message>();
 	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	private BuyerIOThread communicationThread;
+	private BuyerGUI guiInstance;
 	
     public static void main(String[] args) throws IOException {
-    	Buyer buyer = new Buyer();
-        Scanner scan = new Scanner(System.in);
+    	Buyer buyer = new Buyer(null);
+    	Scanner scan = new Scanner(System.in);
     	while(true){
 			System.out.println("Enter choice :");
 			String input = scan.nextLine();
@@ -43,10 +44,11 @@ public class Buyer {
         }
     }
     
-    public Buyer(){
+    public Buyer(BuyerGUI guiInstance){
     	this.setUUID(UUIDGenerator.getNextUUID());
-    	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing, this);
+    	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing, this, guiInstance);
     	this.communicationThread.start();
+    	this.guiInstance = guiInstance;
     }
 
     public void printNotices(){
@@ -94,6 +96,9 @@ public class Buyer {
 		//need to be cached in the interest database
 		SaleItem interest = new SaleItem(baseString,modifierString,timeStamp,minimumCost,maximumCost,this.uuid);
 		interest.setInterest(true);
+		if(guiInstance != null){
+			guiInstance.addItemToInterestsTable(interest);
+		}
 		this.communicationThread.getPublishedInterests().add(interest);
 		Message message  = new Message("Interest request from a buyer",interest,interest.getUuid());
 		this.outgoing.add(message);

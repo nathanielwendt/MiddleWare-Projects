@@ -1,5 +1,6 @@
 package buyer;
 
+import gui.BuyerGUI;
 import includes.EventType;
 
 import java.io.BufferedReader;
@@ -14,7 +15,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
 import entities.Message;
-import events.Bid;
 import events.BidUpdate;
 import events.SaleFinalized;
 import events.SaleItem;
@@ -28,15 +28,16 @@ public class BuyerIOThread extends Thread {
 	private int hostPort = Init.MASTERPORT;
 	private LinkedBlockingQueue<Message> incoming = null;
 	private LinkedBlockingQueue<Message> outgoing = null;
-	
+
 	private HashMap<String,Double[]> autoBids; //String UUID matching highest value to auto bid
 	private ArrayList<SaleItem> matchingItems;
 	private ArrayList<SaleItem> publishedInterests;
 	private ArrayList<BidUpdate> updatesReceived;
 	private ArrayList<SaleFinalized> finalizedSales;
+	private BuyerGUI guiInstance;
 
 
-	public BuyerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing, Buyer callingBuyer){
+	public BuyerIOThread(LinkedBlockingQueue<Message> incoming, LinkedBlockingQueue<Message> outgoing, Buyer callingBuyer, BuyerGUI guiInstance){
 		this.callingBuyer = callingBuyer;
 		this.incoming = incoming;
 		this.outgoing = outgoing;
@@ -45,6 +46,7 @@ public class BuyerIOThread extends Thread {
 		this.updatesReceived = new ArrayList<BidUpdate>();
 		this.setFinalizedSales(new ArrayList<SaleFinalized>());
 		this.autoBids = new HashMap<String,Double[]>();
+		this.guiInstance = guiInstance;
 	}
 
 	public void run() {   
@@ -107,13 +109,19 @@ public class BuyerIOThread extends Thread {
 										System.out.println("The message has been identified to be an available item.");
 										System.out.println("The item is -> " + item.toJson());
 									}
+									
+									//add the matching item to the GUI for futher usage (like bidding)
+									if(guiInstance != null){
+										guiInstance.addMatchingItemToTable(item);
+									}
+									
 								}else{
 									System.err.println("Something wrong. A buyer is not supposed to receive an interest message! Message received -> " + item.toJson());
 								}
 							}else if(receivedMessage.getEventType() == EventType.bidUpdate){
 								BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
 								this.updatesReceived.add(update);
-								
+
 								//check if the bid needs to automatically update itself
 								Double[] bidPair = this.autoBids.get(update.getItemUUID());
 								double maxBid = 0.0;
@@ -129,10 +137,13 @@ public class BuyerIOThread extends Thread {
 									if(nextBid > maxBid) //make sure increment doesn't push bid above max buyer is willing to go
 										nextBid = maxBid;
 									this.callingBuyer.publishBid(update.getItemUUID(), nextBid); //publish auto update bid bid
-									
-									//***may want some gui stuff here to tell the user that the bid was automatically updated
-									
-									
+
+									//update the GUI according to bid update!
+									if(guiInstance != null){
+										guiInstance.updateTableUsingBidUpdate(update);
+									}
+
+
 								} else { //no automatic bid update necessary
 									if(Init.VERBOSE) {
 										System.out.println("The message has been identified to be a bid update.");
@@ -146,10 +157,16 @@ public class BuyerIOThread extends Thread {
 									System.out.println("The message has been identified to be a finalized sale notification.");
 									System.out.println("The finalsale is -> " + finalSale.toJson());
 								}
+								
+								//notify the user that the sale has been finalized and remove it from the list of available items
+								if(guiInstance != null){
+									guiInstance.notifySaleFinalizedToUser(finalSale);
+								}
+								
 							}else{
 								System.err.println("Buyer just received an unsupported message.Message -> " + receivedMessage.toJson());
 							}
-							
+
 						}
 					}
 				}
@@ -225,7 +242,7 @@ public class BuyerIOThread extends Thread {
 	public void setFinalizedSales(ArrayList<SaleFinalized> finalizedSales) {
 		this.finalizedSales = finalizedSales;
 	}
-	
+
 	public void setAutoBid(String itemID, double interval, double bidMax){
 		Double[] bidPair = new Double[]{bidMax,interval};
 		this.autoBids.put(itemID, bidPair);
