@@ -1,3 +1,7 @@
+//@file Message.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Message is an item sent between entities that contains a header (where it came from) and a body (an event to represent)
+
 package entities;
 
 import includes.EventType;

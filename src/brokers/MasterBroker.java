@@ -1,9 +1,13 @@
+//@file MasterBroker.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ MasterBrokers that listens to all inputs: brokers, buyers, sellers
+//@ at a well known port initialized in setup.Init.java;
+
 package brokers;
 
 import java.net.*;
 import java.io.*;
 import setup.Init;
-import entities.*;
 
 public class MasterBroker {
 	

@@ -1,10 +1,11 @@
+//@file Seller.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Seller is capable of publishing events, receiving and handling bids, and closing item bidding (selling the item)
+
 package seller;
 import gui.SellerGUI;
 import includes.UUIDGenerator;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import entities.Message;
@@ -18,23 +19,6 @@ public class Seller {
 	private LinkedBlockingQueue<Message> outgoing = new LinkedBlockingQueue<Message>();
 	private SellerIOThread communicationThread;
 	private SellerGUI guiInstance;
-
-	public static void main(String[] args) throws IOException {
-
-		Seller seller = new Seller(null);
-		Scanner scan = new Scanner(System.in);
-		while(true){
-			System.out.println("Enter choice :");
-			String input = scan.nextLine();
-			if(input.toLowerCase().equals("publishitem")){
-				Calendar c = Calendar.getInstance();
-				c.set(Calendar.YEAR, 2009);
-				seller.publishAvailableItem("Car","Mercedes",c.getTimeInMillis(),100,50000);
-			} else if(input.toLowerCase().equals("saleFinal")){
-				//seller.publishSaleFinalized(seller.getCommunicationThread().getPublishedAvailableItems.entryset().iterator().next(),1000);
-			}
-		}
-	}
 
 	public Seller(SellerGUI guiInstance){
 		this.setUuid(UUIDGenerator.getNextUUID());
@@ -51,8 +35,6 @@ public class Seller {
 		}
 
 	}
-
-	//bid update,sale finalized,available item
 
 	public void publishSaleFinalized(String buyerUUID,String itemUUID,double bidValue){
 		SaleFinalized update = new SaleFinalized(buyerUUID,itemUUID,bidValue);

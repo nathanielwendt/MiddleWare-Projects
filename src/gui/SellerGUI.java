@@ -258,11 +258,15 @@ public class SellerGUI extends JFrame {
 		public void actionPerformed(ActionEvent e){
 			int row = Integer.valueOf(e.getActionCommand());
 			DefaultTableModel model = (DefaultTableModel) publishedItemsTable.getModel();
-			SellerGUI.this.sellerInstance.publishSaleFinalized(String.valueOf(model.getValueAt(row,7)), 
-					String.valueOf(model.getValueAt(row,9)), 
-					Double.parseDouble(String.valueOf(model.getValueAt(row,6))));
-			model.removeRow(row);
-			JOptionPane.showMessageDialog(null, "The item has been finalized and all the bidders have been notified about the final bid.", "Finalized",JOptionPane.INFORMATION_MESSAGE);
+			if((String.valueOf(model.getValueAt(row,7)) == "")){ //need to check this so the user doesn't try to sell an item with no bids, otherwise it will throw an exception
+				JOptionPane.showMessageDialog(null, "You cannot finalize the sale of an item with no bidder", "Error",JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				SellerGUI.this.sellerInstance.publishSaleFinalized(String.valueOf(model.getValueAt(row,7)), 
+						String.valueOf(model.getValueAt(row,9)), 
+						Double.parseDouble(String.valueOf(model.getValueAt(row,6))));
+				model.removeRow(row);
+				JOptionPane.showMessageDialog(null, "The item has been finalized and all the bidders have been notified about the final bid.", "Finalized",JOptionPane.INFORMATION_MESSAGE);
+			}
 		}
 	};
 	private JTable getPublishedItemsTable() {

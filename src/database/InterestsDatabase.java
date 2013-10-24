@@ -1,3 +1,7 @@
+//@file InterestsDatabase.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Database for interests in certain items, searches for items based on a graph search technique
+
 package database;
 import java.util.ArrayList;
 import java.util.Date;

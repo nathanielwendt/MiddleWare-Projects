@@ -1,3 +1,7 @@
+//@file Event.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Event is an item that is passed between entities informing of some action
+
 package entities;
 
 import includes.EventType;

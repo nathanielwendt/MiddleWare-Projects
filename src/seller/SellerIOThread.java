@@ -1,3 +1,7 @@
+//@file InterestBidUpdate.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Thread responsible for communication with the broker and handling incoming events/messages
+
 package seller;
 
 import gui.SellerGUI;
@@ -98,10 +102,6 @@ public class SellerIOThread extends Thread {
 							}
 							if(receivedMessage.getEventType() == EventType.bid){
 								Bid receivedBid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
-								this.bidsReceived.add(receivedBid);
-								if(guiInstance != null){
-									guiInstance.updateTableDataAccordingToBid(receivedBid); //update the GUI accordingly
-								}
 
 								if(Init.VERBOSE) {
 									System.out.println("The message has been identified to be a bid from a buyer.");
@@ -113,8 +113,9 @@ public class SellerIOThread extends Thread {
 									if(currentBidLeader == null){ //first time bid is being placed
 										receivedBid.setBidValue(biddingItem.getCostLowerBound() + .01);
 									}
-									else
+									else if(!currentBidLeader.getBidderUUID().equals(receivedBid.getBidderUUID())){
 										receivedBid.setBidValue(currentBidLeader.getBidValue() + 0.01); //outbid by a penny
+									}
 								}
 									
 								//implemented logic figure out whether to publish or not
@@ -125,6 +126,10 @@ public class SellerIOThread extends Thread {
 									this.outgoing.add(toBePublished);
 									if(Init.VERBOSE) {
 										System.out.println("The bid update for the received bid has been published.");
+									}
+									this.bidsReceived.add(receivedBid);
+									if(guiInstance != null){
+										guiInstance.updateTableDataAccordingToBid(receivedBid); //update the GUI accordingly
 									}
 								}
 

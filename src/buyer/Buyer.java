@@ -1,9 +1,11 @@
+//@file Buyer.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Buyer allows for bidding and generating interest in certain items
+
 package buyer;
 import gui.BuyerGUI;
 import includes.UUIDGenerator;
 
-import java.io.IOException;
-import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import entities.Message;
@@ -18,32 +20,6 @@ public class Buyer {
 	private BuyerIOThread communicationThread;
 	private BuyerGUI guiInstance;
 	
-    public static void main(String[] args) throws IOException {
-    	Buyer buyer = new Buyer(null);
-    	Scanner scan = new Scanner(System.in);
-    	while(true){
-			System.out.println("Enter choice :");
-			String input = scan.nextLine();
-			if(input.toLowerCase().equals("interestone")){
-				buyer.publishInterest("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
-			}else if(input.toLowerCase().equals("interesttwo")){
-				buyer.publishInterest("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,SaleItem.COST_UPPER_BOUND_IGNORE);
-			}else if(input.toLowerCase().equals("bidupdateinterest")){
-				buyer.interestBidUpdate(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid());
-			}else if(input.toLowerCase().equals("bidauto1000")){
-				buyer.publishAutoBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),100,1000);
-			}else if(input.toLowerCase().equals("bid1")){
-				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1);
-			}else if(input.toLowerCase().equals("bid800")){
-					buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),800);
-			}else if(input.toLowerCase().equals("bid1000")){
-				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1000);
-			} else if(input.toLowerCase().equals("bid1001")){
-				buyer.publishBid(buyer.getCommunicationThread().getMatchingItems().get(0).getUuid(),1001);
-			}
-        }
-    }
-    
     public Buyer(BuyerGUI guiInstance){
     	this.setUUID(UUIDGenerator.getNextUUID());
     	this.communicationThread = new BuyerIOThread(this.incoming, this.outgoing, this, guiInstance);
@@ -80,6 +56,7 @@ public class Buyer {
 		//publish bid
 		Bid bid = new Bid(this.uuid,itemUUID,0.0); //0.0 is a dummy value that will be overwritten by the seller since it is an auto min bid
 		bid.setAutoMinBid();
+		System.out.println("Bid autoBidvalue: " + bid.isAutoMinBid());
 		Message message  = new Message("Bid from a buyer",bid,bid.getItemUUID());
 		this.outgoing.add(message);
 	}

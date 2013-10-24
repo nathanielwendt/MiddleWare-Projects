@@ -1,3 +1,7 @@
+//@file BidUpdate.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ BidUpdate event is a notification that the previously held bid has been overwritten
+
 package events;
 
 import includes.EventType;

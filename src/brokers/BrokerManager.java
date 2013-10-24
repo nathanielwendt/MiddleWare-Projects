@@ -1,3 +1,8 @@
+//@file BrokerManager.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Handles logic for Broker
+//@ Maintains the message queues that the broker threads use to pass messages
+
 package brokers;
 import includes.LinkName;
 
@@ -37,6 +42,8 @@ public class BrokerManager {
 	public LinkedBlockingQueue<Message> pos0 = new LinkedBlockingQueue<Message>();
 	public LinkedBlockingQueue<Message> pos1 = new LinkedBlockingQueue<Message>();
 
+	// Useful Constructor
+	//@param brokerId - id value for the broker to be managed
 	public BrokerManager(int brokerId){
 		this.brokerId = brokerId;
 		this.setInterestsDB(new InterestsDatabase());
@@ -47,16 +54,21 @@ public class BrokerManager {
 		this.bidUpdateSource = new HashMap<String,boolean[]>();
 	}
 
+	// Gets the managed broker Id
+	//@returns the integer value of the broker Id
 	public int getBrokerId(){
 		return this.brokerId;
 	}
 
+	// Gets the parent link
+	//@returns the Parent LinkName enumeration
 	public synchronized LinkName getParentLink(){
 		this.numBrokers++;
 		return LinkName.parent;
 	}
 
-	//get Next Link for Client
+	// Gets the next link for the broker thread - determines where a new buyer/seller should be attributed
+	//@returns the LinkName that should be allocated next
 	public synchronized LinkName getNextLink(){
 		int currClientCount = this.numClients + 1; //what the next client count will be
 		if (this.numClients == 0){
@@ -86,30 +98,39 @@ public class BrokerManager {
 		}
 	}
 
+	// Getter method for InterestDatabase
 	public InterestsDatabase getInterestsDB() {
 		return interestsDB;
 	}
 
+	// Setter method for InterestDatabase
 	public void setInterestsDB(InterestsDatabase interestsDB) {
 		this.interestsDB = interestsDB;
 	}
 
+	// Getter method for Message Source
 	public HashMap<String,boolean[]> getMessageSource() {
 		return messageSource;
 	}
 
+	// Setter method for Message Source
 	public void setMessageSource(HashMap<String,boolean[]> messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	// Getter method for the Available Item Database
 	public HashMap<String,SaleItem> getAvailableItemDatabase() {
 		return availableItemDatabase;
 	}
 
+	// Setter method for the Available Item Database
 	public void setAvailableItemDatabase(HashMap<String,SaleItem> availableItemDatabase) {
 		this.availableItemDatabase = availableItemDatabase;
 	}
 
+	// Gets the queue that corresponds to a given dataSource
+	//@param dataSource - enumeration integer representing the queue to return;
+	//@returns reference to the LinkingBLockingQueue corresponding to the data source
 	public LinkedBlockingQueue<Message> getQueueAccordingToSource(int dataSource){
 		switch(dataSource){
 		case LEFT_BROKER_CHILD:
@@ -127,6 +148,9 @@ public class BrokerManager {
 		}
 	}
 
+	// Gets the queue that corresponds to a given dataSource --ForDebug
+	//@param dataSource - enumeration integer representing the queue to return;
+	//@returns String name corresponding to the data source
 	public static String getDebugString(int dataSource){
 		switch(dataSource){
 		case LEFT_BROKER_CHILD:
@@ -144,50 +168,33 @@ public class BrokerManager {
 		}
 	}
 
+	// Getter method for InterestBidUpdates
 	public HashMap<String,InterestBidUpdate> getInterestBidUpdates() {
 		return interestBidUpdates;
 	}
 
+	// Setter method for InterestBidUpdates
 	public void setInterestBidUpdates(HashMap<String,InterestBidUpdate> interestBidUpdates) {
 		this.interestBidUpdates = interestBidUpdates;
 	}
-
+	
+	// Getter method for MessageSourceClient
 	public HashMap<String,boolean[]> getMessageSourceClient() {
 		return messageSourceClient;
 	}
-
+	
+	// Setter method for MessageSourceClient
 	public void setMessageSourceClient(HashMap<String,boolean[]> messageSourceClient) {
 		this.messageSourceClient = messageSourceClient;
 	}
 
+	// Getter method for BidUpdateSource
 	public HashMap<String,boolean[]> getBidUpdateSource() {
 		return bidUpdateSource;
 	}
 
+	// Setter method for BidUpdateSource
 	public void setBidUpdateSource(HashMap<String,boolean[]> bidUpdateSource) {
 		this.bidUpdateSource = bidUpdateSource;
 	}
-
-	/*
-	public synchronized void incrementBrokerCount(){
-		++this.numBrokers;
-	}
-
-	public synchronized void incrementClientCount(){
-		++this.numClients;
-	}		
-
-	public synchronized int getBrokerCount(){
-		return this.numBrokers;
-	}
-
-	public synchronized int getClientCount(){
-		return this.numClients;
-	}
-
-	public synchronized void setBrokerId(int newId){
-		this.brokerId = newId;
-	}
-
-	 */
 }

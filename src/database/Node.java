@@ -1,3 +1,7 @@
+//@file Node.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Node representing a graphical structure of any type of information
+
 package database;
 import java.util.ArrayList;
 import java.util.List;

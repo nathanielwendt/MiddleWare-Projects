@@ -1,3 +1,8 @@
+//@file BrokerLinkThread.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Thread responsible for handling interaction with buyers/sellers
+//@ A BrokerLinkThreadChild is created for interaction with other brokers
+
 package brokers;
 
 import includes.EventType;
@@ -9,7 +14,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import setup.Init;
@@ -26,8 +30,13 @@ public class BrokerLinkThread extends Thread {
 	protected PrintWriter outstream;
 	protected BufferedReader instream;
 
+	// Default constructor
 	public BrokerLinkThread(){}
 
+	// Useful Constructor
+	//@params socket - socket the caller has passed to interact with some entity
+	//@params brokerManager - manager to use for broker and client counts
+	//@params priority - thread priority
 	public BrokerLinkThread(Socket socket, BrokerManager brokerManager, int priority) {
 		super("BrokerCommunicateThread");
 		this.socket = socket;
@@ -35,6 +44,10 @@ public class BrokerLinkThread extends Thread {
 		setPriority(priority); 
 	}
 	
+	// Merges subscription table entries
+	//@params one - first array to merge
+	//@params one - second array to merge
+	//@returns boolean[] representing the OR'd values of each of the input arrays
 	protected boolean[] combineBooleanArrays(boolean[] one,boolean[] two){
 		boolean[] result = new boolean[one.length];
 		for(int i=0; i<result.length;i++){
@@ -43,6 +56,9 @@ public class BrokerLinkThread extends Thread {
 		return result;
 	}
 
+	// Master method called on thread when created
+	// Connects to the entity and establishes it's identity and directs
+	// this threads treatment of it based on it's identity.
 	public void run() { 
 		try {
 			this.outstream = new PrintWriter(this.socket.getOutputStream(), true);
@@ -82,6 +98,9 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 
+	// Determines how to delegate port forwarding and listening to a given entity
+	// denoted by the input LinkName enumeration
+	//@params nextLinkName - LinkName enum indicating the id of the entity
 	protected void resolveListening(LinkName nextLinkName){
 		if(Init.VERBOSE) {
 			if(nextLinkName != LinkName.forward){
@@ -136,6 +155,10 @@ public class BrokerLinkThread extends Thread {
 	}
 
 
+	// Polls 1) the message queue this thread is responsible for that corresponds to the entity it is interacting with
+	//       2) the socket input stream from the entity
+	//@param firstChildQueue - message queue to listen to
+	//@param dataSource - what the entity's source information is
 	protected void manageConection(LinkedBlockingQueue<Message> firstChildQueue, int dataSource){
 		try{
 			outstream.println("Connection Established"); 
@@ -188,9 +211,8 @@ public class BrokerLinkThread extends Thread {
 
 				//poll the queue and send them to the destination
 				nextMsg = (Message) firstChildQueue.poll();
-				if(nextMsg != null){
+				if(nextMsg != null)
 					outstream.println(nextMsg.toJson());		
-				}
 
 				if(Init.ENABLE_THREAD_SLEEP){
 					try{
@@ -207,10 +229,12 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 	
+	// Handles an incoming Sale Item event message and notifies relevant queues
+	//@param receivedMessage - message to handle
+	//@param dataSource - source of data message
 	protected void ManageSaleItem(Message receivedMessage, int dataSource){
 		SaleItem item = SaleItem.getObjectFromJson(receivedMessage.getEventAsJson());
 		if(item.isInterest()){ //coming from a buyer or a child
-			//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
 			this.brokerManager.getInterestsDB().addItemToDataBase(item);
 			receivedMessage.setMessageSourceValue(dataSource, true);
 			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
@@ -219,7 +243,6 @@ public class BrokerLinkThread extends Thread {
 				System.out.println("It has been identified as an interest and propagated to the parent.");
 			}
 		}else{ //coming from a seller or a child, needs to be matched and propagated
-			//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be matched and dispatched
 			this.brokerManager.getAvailableItemDatabase().put(receivedMessage.getUuid(), item);
 			receivedMessage.setMessageSourceValue(dataSource, true);
 			this.brokerManager.getMessageSource().put(receivedMessage.getUuid(), receivedMessage.getMessageSourceArray().clone());
@@ -245,9 +268,11 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 	
+	// Handles an incoming Interest Bid Update event message and notifies relevant queues
+	//@param receivedMessage - message to handle
+	//@param dataSource - source of data message
 	protected void ManageInterestBidUpdate(Message receivedMessage, int dataSource){
 		InterestBidUpdate interest = InterestBidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
-		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to looked up in the future
 		this.brokerManager.getInterestBidUpdates().put(receivedMessage.getUuid(), interest);
 		receivedMessage.setMessageSourceValue(dataSource, true);
 		//since we will be having a lot of interests on the same item, we need to update the source information, rather than adding new info everytime
@@ -263,9 +288,11 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 	
+	// Handles an incoming Bid event message and notifies relevant queues
+	//@param receivedMessage - message to handle
+	//@param dataSource - source of data message
 	protected void ManageBid(Message receivedMessage, int dataSource){
 		Bid bid = Bid.getObjectFromJson(receivedMessage.getEventAsJson());
-		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the right seller
 		receivedMessage.setMessageSourceValue(dataSource, true);
 		//since we will be having a lot of bids, we need to update the source information, rather than adding new info everytime
 		boolean[] existingSourceInfo = this.brokerManager.getMessageSourceClient().get(bid.getItemUUID());
@@ -289,6 +316,9 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 	
+	// Handles an incoming Bid Update event message and notifies relevant queues
+	//@param receivedMessage - message to handle
+	//@param dataSource - source of data message
 	protected void ManageBidUpdate(Message receivedMessage, int dataSource){
 		BidUpdate update = BidUpdate.getObjectFromJson(receivedMessage.getEventAsJson());
 		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the interested buyers
@@ -306,6 +336,9 @@ public class BrokerLinkThread extends Thread {
 		}
 	}
 	
+	// Handles an incoming Sale Notice event message and notifies relevant queues
+	//@param receivedMessage - message to handle
+	//@param dataSource - source of data message
 	protected void ManageSaleNotice(Message receivedMessage, int dataSource){
 		SaleFinalized sale = SaleFinalized.getObjectFromJson(receivedMessage.getEventAsJson());
 		//this.brokerManager.parent.add(receivedMessage); //propagate it to the top parent to be sent to the buyers

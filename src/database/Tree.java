@@ -1,3 +1,7 @@
+//@file Tree.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Tree holding structure for Nodes of any type
+
 package database;
 import java.util.ArrayList;
 

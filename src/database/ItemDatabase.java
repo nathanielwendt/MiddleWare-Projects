@@ -1,3 +1,7 @@
+//@file ItemDatabase.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Database of items that supports adding and querying
+
 package database;
 import java.util.ArrayList;
 import java.util.Calendar;

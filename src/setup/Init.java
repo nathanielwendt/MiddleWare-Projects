@@ -1,3 +1,9 @@
+//@file Init.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Initialization file for setting up what ports to connect and for establishing the masterport.
+//@ Also allows for enabling some thread sleeping options to improve performance (when simulating on one machine)
+//@ and debugging information through VERBOSE;
+
 package setup;
 
 import java.net.InetAddress;

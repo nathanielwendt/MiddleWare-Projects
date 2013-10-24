@@ -1,3 +1,7 @@
+//@file BrokerLinkThreadChild.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Thread responsible for handling interaction with other brokers
+
 package brokers;
 
 import java.io.BufferedReader;
@@ -5,15 +9,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.concurrent.*;
 
 import setup.Init;
 import includes.LinkName;
-import entities.Message;
 
 public class BrokerLinkThreadChild extends BrokerLinkThread {
 	private LinkName linkName;
 	
+	// Useful Constructor
+	//@params socket - socket the caller has passed to interact with some entity
+	//@params nextBrokerPort - broker port to connect to
+	//@params linkName - name of link connection (left broker child or right broker child)
 	public BrokerLinkThreadChild(BrokerManager brokerManager, int nextBrokerPort, LinkName linkName){
 		this.linkName = linkName;
 	    this.brokerManager = brokerManager;
@@ -28,6 +34,9 @@ public class BrokerLinkThreadChild extends BrokerLinkThread {
         }
 	}
 	
+	// Master method called on thread when created
+	// Connects to the entity and establishes it's identity and directs
+	// this threads treatment of it based on it's identity.
 	public void run() { 
 	    try {
 	        this.outstream = new PrintWriter(this.socket.getOutputStream(), true);

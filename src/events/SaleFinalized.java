@@ -1,3 +1,7 @@
+//@file SaleFinalized.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ SaleFinalized event that is sent when a seller closes an auction with a certain bid value
+
 package events;
 
 import includes.EventType;

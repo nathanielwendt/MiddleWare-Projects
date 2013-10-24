@@ -1,3 +1,7 @@
+//@file Bid.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Bid Event representing a value placed on an item from a given user
+
 package events;
 
 import includes.EventType;

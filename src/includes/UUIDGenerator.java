@@ -1,7 +1,10 @@
+//@file UUIDGenerator.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Generates a unique id for each entity
+
 package includes;
 import java.util.Random;
 import java.util.UUID;
-
 
 public class UUIDGenerator {
 	private static int uuidLocalCounter = 0;

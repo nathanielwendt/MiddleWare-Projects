@@ -1,3 +1,7 @@
+//@file EventType.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Enumeration representing the type of event being passed
+
 package includes;
 
 public enum EventType {

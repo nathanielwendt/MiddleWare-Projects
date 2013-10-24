@@ -467,10 +467,12 @@ public class BuyerGUI extends JFrame {
 				toBeRemoved = i;
 			}
 		}
-		String notification = model.getValueAt(toBeRemoved, 0) + "," + model.getValueAt(toBeRemoved, 1) + "," +
-				model.getValueAt(toBeRemoved, 2) + " has been sold to " + update.getBuyerId() + " for $" + update.getSaleValue();
-		model.removeRow(toBeRemoved);
-		JOptionPane.showMessageDialog(null,notification, "Item Sold",JOptionPane.INFORMATION_MESSAGE);
+		if(toBeRemoved != -1){ //duplicate notifications will throw an exception, so we check here to make sure that won't happen
+			String notification = model.getValueAt(toBeRemoved, 0) + "," + model.getValueAt(toBeRemoved, 1) + "," +
+					model.getValueAt(toBeRemoved, 2) + " has been sold to " + update.getBuyerId() + " for $" + update.getSaleValue();
+			model.removeRow(toBeRemoved);
+			JOptionPane.showMessageDialog(null,notification, "Item Sold",JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 
 }

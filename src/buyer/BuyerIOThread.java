@@ -1,3 +1,7 @@
+//@file BuyerIOThread.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ Buyer thread that listens to it's broker for messages
+
 package buyer;
 
 import gui.BuyerGUI;
@@ -73,7 +77,8 @@ public class BuyerIOThread extends Thread {
 		}
 	}
 
-	//returns the next port if loopOnBroker is closed and forwarded
+	// Loops on input from a broker and handles incoming messages
+	// returns the next port if loopOnBroker is closed and forwarded
 	public int loopOnBroker(){
 		String fromServer = "";
 		int nextPort;
@@ -145,6 +150,12 @@ public class BuyerIOThread extends Thread {
 
 
 								} else { //no automatic bid update necessary
+									
+									//update the GUI according to bid update!
+									if(guiInstance != null){
+										guiInstance.updateTableUsingBidUpdate(update);
+									}
+									
 									if(Init.VERBOSE) {
 										System.out.println("The message has been identified to be a bid update.");
 										System.out.println("The update is -> " + update.toJson());

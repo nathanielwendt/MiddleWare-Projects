@@ -1,3 +1,7 @@
+//@file InterestBidUpdate.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ InterestBidUpdate event that is generated when a buyer has in interest in an item
+
 package events;
 
 import includes.EventType;

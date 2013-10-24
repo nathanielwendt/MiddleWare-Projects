@@ -1,3 +1,7 @@
+//@file SaleItem.java
+//@author Nathaniel Wendt, Raga Srinivasan
+//@ SaleItem representing an item with a value, name, date, and description
+
 package events;
 import includes.EventType;
 import includes.UUIDGenerator;
@@ -39,34 +43,6 @@ public class SaleItem extends Event{
 	private boolean isInterest; //if this is false, it means its an available item
 	
 	public static void main(String[] args){
-		/*
-		InterestsDatabase data = InterestsDatabase.getInstance();
-		Calendar c = Calendar.getInstance();
-		SaleItem s1 = new SaleItem("Car","Mercedes",SaleItem.TIME_STAMP_IGNORE,1000,5000);
-		SaleItem s2 = new SaleItem("Car","lamborghini",SaleItem.TIME_STAMP_IGNORE,1000,3000);
-		SaleItem s3 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,50000);
-		SaleItem s4 = new SaleItem("Car",SaleItem.MODIFIER_STRING_IGNORE,SaleItem.TIME_STAMP_IGNORE,500,20000);
-		SaleItem s5 = new SaleItem("Animal","Cat",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,3000);
-		SaleItem s6 = new SaleItem("Animal","Cat",c.getTimeInMillis(),12000,SaleItem.COST_UPPER_BOUND_IGNORE);
-		SaleItem s7 = new SaleItem("Animal","Platypus",c.getTimeInMillis(),1000,SaleItem.COST_UPPER_BOUND_IGNORE);
-		SaleItem s8 = new SaleItem("Object","pen",c.getTimeInMillis(),1.5,SaleItem.COST_UPPER_BOUND_IGNORE);
-		SaleItem s9 = new SaleItem("Car","Mercedes",c.getTimeInMillis(),SaleItem.COST_LOWER_BOUND_IGNORE,50000);
-		
-		data.addItemToDataBase(s1);
-		data.addItemToDataBase(s2);
-		data.addItemToDataBase(s3);
-		data.addItemToDataBase(s4);
-		data.addItemToDataBase(s5);
-		data.addItemToDataBase(s6);
-		data.addItemToDataBase(s7);
-		data.addItemToDataBase(s8);
-		data.addItemToDataBase(s9);
-		
-		SaleItem sTest = new SaleItem("Car","Mercedes",c.getTimeInMillis(),1000,10000);
-		
-		System.out.println(data.getSearchResult(new SaleItem("Car","Mercedes",c.getTimeInMillis(),1000,10000)));
-		
-		*/
 	}
 	
 	public SaleItem(String baseString,String modifierString,long timeStamp,double costLowerBound, double costUpperBound,String userUUID){
