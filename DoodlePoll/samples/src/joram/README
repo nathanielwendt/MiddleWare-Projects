@@ -1,0 +1,35 @@
+Distributed Doodle Poll System Version 1.0 11/26/2013
+
+@Author(s): Nathaniel Wendt, Raga Srinivasan
+
+-----------------------------------------------------
+SETUP INSTRUCTIONS
+-----------------------------------------------------
+
+1) Download the source files in your desired directory
+2) Navigate to PROJECT_ROOT/joram/src/doodle/members.txt
+3) Populate this list with your desired usernames (e.g.)
+
+username1@email.com
+username2@email.com
+username3@email.com
+
+-----------------------------------------------------
+RUNNING INSTRUCTIONS
+-----------------------------------------------------
+
+1) Run: ant clean compile
+2) Run: ant reset single_server
+
+The Joram server should be established
+
+3) Run: ant mp4_admin
+
+Now the admin host is running and is ready for clients to connect.
+To connect a new client:
+
+4) Run: ant mp4_client -Darg0=USERNAME_HERE
+* Make sure that your username is included in the members.txt file
+
+You can connect as many clients as you would like as long as they are
+included on the members.txt file and no duplicates are logged in
