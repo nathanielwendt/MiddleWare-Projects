@@ -1,5 +1,9 @@
 Distributed Auction System Version 1.0 10/23/2013
 
+This program implements a broker system that links multiple buyer and seller clients to engage in a distributed auction system.
+The infrastructure is composed at the socket level as brokers listen to input from buyers to post auction items, and buyers to search
+for items and bid on them.  We have also implemented a GUI to stylize the auction system.
+
 @Author(s): Nathaniel Wendt, Raga Srinivasan
 
 --------------------------------------------------------------------------------------------------
