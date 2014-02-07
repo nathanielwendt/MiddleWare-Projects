@@ -1,5 +1,9 @@
 Distributed RMI Chat System Version 1.0 11/7/2013
 
+This project implements a distributed chatroom program using Java Remote Method Invocation (RMI).  The project
+allows for users to create chatrooms of a specific topic, join chatrooms, and participate in chat with other clients
+that have joined the chatroom.  We have also implemented a GUI for the application.
+
 @Author(s): Nathaniel Wendt, Raga Srinivasan
 
 --------------------------------------------------------------------------------------------------
